@@ -7,3 +7,6 @@ motors.cpp
 constants.h
 encoders.h
 encoders.cpp
+Examples/nunchuck/CMakeLists.txt
+Examples/nunchuck/nunchuck_funcs.h
+Examples/nunchuck/nunchuck.cpp

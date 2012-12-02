@@ -1,4 +1,5 @@
 #include "ar-rover5.h"
+#include "constants.h"
 
 #include <TimerFive.h>
 
@@ -14,6 +15,8 @@ void timer5ISR(void)
 
 void initRover5()
 {
+    pinMode(PIN_RELAY, OUTPUT);
+
     encoders.init();
     motors.init();
 
@@ -35,7 +38,7 @@ void rover5Task()
 
         if ((curLB > 512) || (curLF > 512) || (curRB > 512) || (curRF > 512))
         {
-            motors.emergencyStop();
+            motors.directStop();
 
             Serial.println("Motor over current!!");
             Serial.print("left-back: "); Serial.println(curLB, DEC);

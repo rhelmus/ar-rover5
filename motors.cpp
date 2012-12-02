@@ -55,6 +55,22 @@ void CMotors::init()
 
     for (uint8_t m=0; m<MOTOR_COUNT; ++m)
         setEffMotorDirection(static_cast<EMotor>(m), DIR_FWD);
+
+    enabled = false;
+}
+
+void CMotors::enable()
+{
+    digitalWrite(PIN_RELAY, HIGH);
+    enabled = true;
+    delay(100); // Settle a bit
+}
+
+void CMotors::disable()
+{
+    directStop();
+    digitalWrite(PIN_RELAY, LOW);
+    enabled = false;
 }
 
 void CMotors::setMotorSpeed(EMotor m, uint8_t s)
@@ -76,6 +92,14 @@ void CMotors::setMotorSpeed(EMotor m, uint8_t s)
 void CMotors::setMotorDirection(EMotor m, EMotorDirection d)
 {
     motorData[m].targetDirection = d;
+}
+
+void CMotors::turn(uint8_t s, ETurnDirection d)
+{
+    setLeftDirection((d == DIR_LEFT) ? DIR_BWD : DIR_FWD);
+    setRightDirection((d == DIR_RIGHT) ? DIR_BWD : DIR_FWD);
+    setLeftSpeed(s);
+    setRightSpeed(s);
 }
 
 uint16_t CMotors::getCurrent(EMotor m) const

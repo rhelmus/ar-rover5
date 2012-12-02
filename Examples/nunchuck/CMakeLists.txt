@@ -14,16 +14,16 @@ cmake_minimum_required(VERSION 2.8)
 #====================================================================#
 #  Setup Project                                                     #
 #====================================================================#
-project(motor-test C CXX)
+project(nunchuck C CXX)
 find_package(Arduino 1.0 REQUIRED)
 
 #====================================================================#
 #  Settings                                                          #
 #====================================================================#
-set(FIRMWARE_NAME motor-test)
+set(FIRMWARE_NAME nunchuck)
 
 set(${FIRMWARE_NAME}_BOARD mega)               # Arduino Target board
-set(${FIRMWARE_NAME}_SRCS motor-test.cpp)  # Firmware sources
+set(${FIRMWARE_NAME}_SRCS nunchuck.cpp)  # Firmware sources
 set(${FIRMWARE_NAME}_PORT /dev/ttyUSB0)            # Serial upload port
 
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../..)

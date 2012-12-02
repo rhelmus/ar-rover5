@@ -3,6 +3,7 @@
 
 enum
 {
+    // Motors
     PIN_MOTOR_LB_PWM = 5,
     PIN_MOTOR_LB_DIR = 6,
     PIN_MOTOR_LB_CUR = 2,
@@ -19,6 +20,7 @@ enum
     PIN_MOTOR_RF_DIR = 8,
     PIN_MOTOR_RF_CUR = 1,
 
+    // Encoders
     PIN_ENC_LB_SIGN1 = 33,
     PIN_ENC_LB_SIGN2 = 34,
     INT_ENC_LB = 5,
@@ -33,7 +35,10 @@ enum
 
     PIN_ENC_RF_SIGN1 = 35,
     PIN_ENC_RF_SIGN2 = 36,
-    INT_ENC_RF = 1
+    INT_ENC_RF = 1,
+
+    // Misc
+    PIN_RELAY = 30
 };
 
 

@@ -13,7 +13,7 @@ enum EMotor
 };
 
 enum EMotorDirection { DIR_FWD, DIR_BWD };
-
+enum ETurnDirection { DIR_LEFT, DIR_RIGHT };
 
 class CMotors
 {
@@ -36,12 +36,15 @@ class CMotors
     };
 
     volatile SMotor motorData[MOTOR_COUNT];
+    volatile bool enabled;
 
     void setEffMotorSpeed(EMotor m, uint8_t s);
     void setEffMotorDirection(EMotor m, EMotorDirection d);
 
 public:
     void init(void);
+    void enable(void);
+    void disable(void);
 
     void setMotorSpeed(EMotor m, uint8_t s);
     void setLeftSpeed(uint8_t s)
@@ -57,8 +60,9 @@ public:
 
     void move(uint8_t s, EMotorDirection d)
     { setLeftSpeed(s); setLeftDirection(d); setRightSpeed(s); setRightDirection(d); }
+    void turn(uint8_t s, ETurnDirection d);
     void stop(void) { setLeftSpeed(0); setRightSpeed(0); }
-    void emergencyStop(void)
+    void directStop(void)
     { setEffMotorSpeed(MOTOR_LEFT_BACK, 0); setEffMotorSpeed(MOTOR_LEFT_FRONT, 0);
       setEffMotorSpeed(MOTOR_RIGHT_BACK, 0); setEffMotorSpeed(MOTOR_RIGHT_FRONT, 0); }
 

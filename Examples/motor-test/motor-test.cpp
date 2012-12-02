@@ -4,7 +4,6 @@ namespace {
 
 enum
 {
-    RELAY_PIN = 30,
     SW_LOW_PIN = 27,
     SW_HIGH_PIN = 29
 };
@@ -44,8 +43,6 @@ bool switchChanged(void)
 
 void setup()
 {
-    pinMode(RELAY_PIN, OUTPUT);
-
     pinMode(SW_LOW_PIN, INPUT);
     digitalWrite(SW_LOW_PIN, HIGH);
 
@@ -66,7 +63,7 @@ void loop()
 {
     static uint32_t updelay;
     static EMotorDirection ldir = DIR_FWD, rdir = DIR_BWD;
-    static bool running = false, init = true;
+    static bool running = false;
 
     // Switch pressed? (ie. back to unpressed)
     if (switchChanged() && (switchData.curState == HIGH))
@@ -75,17 +72,12 @@ void loop()
 
         if (running)
         {
-            motors.stop();
+            motors.disable();
             running = false;
         }
         else
         {
-            if (init)
-            {
-                digitalWrite(RELAY_PIN, HIGH);
-                delay(100); // Let things settle a bit
-                init = false;
-            }
+            motors.enable();
             motors.setLeftSpeed(80);
             motors.setRightSpeed(80);
             running = true;
