@@ -48,10 +48,8 @@ EJoyDir joyDir(uint16_t jx, uint16_t jy)
         return JOY_NONE;
 }
 
-void setMotorFromJoy(EJoyDir dir)
+void updateMotors(uint8_t speed, EJoyDir dir)
 {
-    const uint8_t speed = 70; // UNDONE
-
     switch (dir)
     {
     case JOY_LEFT: motors.turn(speed, DIR_LEFT); break;
@@ -102,6 +100,7 @@ void loop()
 {
     static uint32_t updelay;
     static EJoyDir lastjdir = JOY_NONE;
+    static uint8_t speed = 70;
     const uint32_t curtime = millis();
 
     if (curtime > updelay)
@@ -110,17 +109,30 @@ void loop()
 
         nunchuck_get_data();
 
+        const uint8_t cbut = nunchuck_cbutton(), zbut = nunchuck_zbutton();
+
+        if (cbut && zbut)
+            speed = 70; // reset
+        else if (cbut)
+            speed = min(speed+5, 160);
+        else if (zbut)
+            speed = max(speed-5, 50);
+
         const uint16_t joyx = nunchuck_joyx();
         const uint16_t joyy = nunchuck_joyy();
 
 //        Serial.print("Joy dir: ");
         const EJoyDir dir = joyDir(joyx, joyy);
 
-        if (dir != lastjdir)
+        if (cbut || zbut || (dir != lastjdir))
         {
+            Serial.print("speed: "); Serial.println(speed, DEC);
+            Serial.print("dir: "); Serial.println(dir, DEC);
             lastjdir = dir;
-            setMotorFromJoy(dir);
-        }
+            updateMotors(speed, dir);
+        }      
+
+
 //        switch (dir)
 //        {
 //        case JOY_LEFT: Serial.println("left"); break;

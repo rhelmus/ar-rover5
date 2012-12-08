@@ -14,6 +14,8 @@ public:
     void update(void);
 
     int16_t getSpeed(EEncoder e) const { return encSpeed[e]; }
+    uint32_t getDist(EEncoder e) const;
+    void resetDist(void);
 };
 
 extern CEncoders encoders;

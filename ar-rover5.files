@@ -10,3 +10,5 @@ encoders.cpp
 Examples/nunchuck/CMakeLists.txt
 Examples/nunchuck/nunchuck_funcs.h
 Examples/nunchuck/nunchuck.cpp
+Examples/calibration/calibration.cpp
+Examples/calibration/CMakeLists.txt

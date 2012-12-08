@@ -20,7 +20,7 @@ class CMotors
     enum
     {
         MOTOR_CHANGE_INTERVAL = 10,
-        MIN_POWER = 60,
+        MIN_POWER = 50,
         MAX_POWER = 160
     };
 
