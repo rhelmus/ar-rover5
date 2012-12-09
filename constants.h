@@ -41,5 +41,9 @@ enum
     PIN_RELAY = 30
 };
 
+// Movement
+#define TRACKED_MOVEMENT
+#define ENC_PULSES_CM 18.28
+#define ENC_PULSES_DEG 5.62
 
 #endif // CONSTANTS_H

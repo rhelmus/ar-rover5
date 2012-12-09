@@ -5,10 +5,10 @@
 
 enum EMotor
 {
-    MOTOR_LEFT_BACK=0,
-    MOTOR_LEFT_FRONT,
-    MOTOR_RIGHT_BACK,
-    MOTOR_RIGHT_FRONT,
+    MOTOR_LB=0,
+    MOTOR_LF,
+    MOTOR_RB,
+    MOTOR_RF,
     MOTOR_COUNT
 };
 
@@ -28,15 +28,16 @@ class CMotors
     {
         uint8_t targetPower, setPower;
         uint16_t targetEncSpeed;
+        uint32_t targetDistance;
         EMotorDirection targetDirection, setDirection;
 
         SMotor(void)
-            : targetPower(0), setPower(0), targetEncSpeed(0), targetDirection(DIR_FWD),
-              setDirection(DIR_FWD) { }
+            : targetPower(0), setPower(0), targetEncSpeed(0), targetDistance(0),
+              targetDirection(DIR_FWD), setDirection(DIR_FWD) { }
     };
 
     volatile SMotor motorData[MOTOR_COUNT];
-    volatile bool enabled;
+    volatile bool enabled, fixedTurning;
 
     void setEffMotorSpeed(EMotor m, uint8_t s);
     void setEffMotorDirection(EMotor m, EMotorDirection d);
@@ -48,25 +49,33 @@ public:
 
     void setMotorSpeed(EMotor m, uint8_t s);
     void setLeftSpeed(uint8_t s)
-    { setMotorSpeed(MOTOR_LEFT_BACK, s); setMotorSpeed(MOTOR_LEFT_FRONT, s); }
+    { setMotorSpeed(MOTOR_LB, s); setMotorSpeed(MOTOR_LF, s); }
     void setRightSpeed(uint8_t s)
-    { setMotorSpeed(MOTOR_RIGHT_BACK, s); setMotorSpeed(MOTOR_RIGHT_FRONT, s); }
+    { setMotorSpeed(MOTOR_RB, s); setMotorSpeed(MOTOR_RF, s); }
 
     void setMotorDirection(EMotor m, EMotorDirection d);
     void setLeftDirection(EMotorDirection d)
-    { setMotorDirection(MOTOR_LEFT_BACK, d); setMotorDirection(MOTOR_LEFT_FRONT, d); }
+    { setMotorDirection(MOTOR_LB, d); setMotorDirection(MOTOR_LF, d); }
     void setRightDirection(EMotorDirection d)
-    { setMotorDirection(MOTOR_RIGHT_BACK, d); setMotorDirection(MOTOR_RIGHT_FRONT, d); }
+    { setMotorDirection(MOTOR_RB, d); setMotorDirection(MOTOR_RF, d); }
 
     void move(uint8_t s, EMotorDirection d)
     { setLeftSpeed(s); setLeftDirection(d); setRightSpeed(s); setRightDirection(d); }
     void turn(uint8_t s, ETurnDirection d);
+    void moveDist(uint8_t s, uint32_t dist, EMotorDirection dir);
+    void moveDistCm(uint8_t s, uint16_t cm, EMotorDirection dir)
+    { moveDist(s, cm * ENC_PULSES_CM, dir); }
+    void turnDist(uint8_t s, uint32_t dist, ETurnDirection dir);
+    void turnAngle(uint8_t s, uint16_t a, ETurnDirection d)
+    { turnDist(s, a * ENC_PULSES_DEG, d); }
     void stop(void) { setLeftSpeed(0); setRightSpeed(0); }
     void directStop(void)
-    { setEffMotorSpeed(MOTOR_LEFT_BACK, 0); setEffMotorSpeed(MOTOR_LEFT_FRONT, 0);
-      setEffMotorSpeed(MOTOR_RIGHT_BACK, 0); setEffMotorSpeed(MOTOR_RIGHT_FRONT, 0); }
+    { setEffMotorSpeed(MOTOR_LB, 0); setEffMotorSpeed(MOTOR_LF, 0);
+      setEffMotorSpeed(MOTOR_RB, 0); setEffMotorSpeed(MOTOR_RF, 0); }
 
     uint16_t getCurrent(EMotor m) const;
+    uint8_t getTargetPower(EMotor m) const { return motorData[m].targetPower; }
+    bool finishedMoving(void) const;
 
     void update(void);
 };

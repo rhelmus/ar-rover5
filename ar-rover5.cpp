@@ -31,10 +31,10 @@ void rover5Task()
 
     if (curtime > ADCCheckDelay)
     {
-        const uint16_t curLB = motors.getCurrent(MOTOR_LEFT_BACK);
-        const uint16_t curLF = motors.getCurrent(MOTOR_LEFT_FRONT);
-        const uint16_t curRB = motors.getCurrent(MOTOR_RIGHT_BACK);
-        const uint16_t curRF = motors.getCurrent(MOTOR_RIGHT_FRONT);
+        const uint16_t curLB = motors.getCurrent(MOTOR_LB);
+        const uint16_t curLF = motors.getCurrent(MOTOR_LF);
+        const uint16_t curRB = motors.getCurrent(MOTOR_RB);
+        const uint16_t curRF = motors.getCurrent(MOTOR_RF);
 
         if ((curLB > 512) || (curLF > 512) || (curRB > 512) || (curRF > 512))
         {

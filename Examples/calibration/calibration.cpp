@@ -1,7 +1,7 @@
 #include <ar-rover5.h>
 
-#define CALIB_FORWARD
-//#define CALIB_TURN_LEFT
+//#define CALIB_FORWARD
+#define CALIB_TURN_LEFT
 //#define CALIB_TURN_LEFT
 
 
@@ -12,7 +12,8 @@ enum
     SW_LOW_PIN = 27,
     SW_HIGH_PIN = 29,
 
-    RUN_TIME = 4000,
+    RUN_DIST = 70,
+    RUN_ROTATION = 180,
     RUN_SPEED = 80
 };
 
@@ -70,53 +71,67 @@ void setup()
 void loop()
 {
     static uint32_t runtime, speedtime;
-    static bool dump;
+    static bool running;
     const uint32_t curtime = millis();
 
-    if (runtime == 0)
+    if (!running)
     {
         // Switch pressed? (ie. back to unpressed)
         if (switchChanged() && (switchData.curState == HIGH))
         {
-            dump = false;
             motors.enable();
 
 #ifdef CALIB_FORWARD
-            motors.move(RUN_SPEED, DIR_FWD);
-#elif CALIB_TURN_LEFT
-            motors.turn(RUN_SPEED, DIR_LEFT);
-#elif CALIB_TURN_RIGHT
+            motors.moveDistCm(RUN_SPEED, RUN_DIST, DIR_FWD);
+#elif defined(CALIB_TURN_LEFT)
+            motors.turnAngle(RUN_SPEED, 180, DIR_LEFT);
+#elif defined(CALIB_TURN_RIGHT)
             motors.turn(RUN_SPEED, DIR_RIGHT);
 #endif
-            runtime = curtime + RUN_TIME;
+            running = true;
+            runtime = curtime;
         }
     }
-    else if (runtime < curtime)
-    {
-        motors.stop();
-        runtime = 0;
-        dump = true;
-    }
-#if 0
     else if (speedtime < curtime)
     {
-//        Serial.println("Speed:");
-//        Serial.print("left-back: "); Serial.println(encoders.getSpeed(ENC_LB), DEC);
-//        Serial.print("left-front: "); Serial.println(encoders.getSpeed(ENC_LF), DEC);
-//        Serial.print("right-back: "); Serial.println(encoders.getSpeed(ENC_RB), DEC);
-//        Serial.print("right-front: "); Serial.println(encoders.getSpeed(ENC_RF), DEC);
-
+        Serial.println("Speed:");
+        Serial.print("left-back: "); Serial.println(encoders.getSpeed(ENC_LB), DEC);
+        Serial.print("left-front: "); Serial.println(encoders.getSpeed(ENC_LF), DEC);
+        Serial.print("right-back: "); Serial.println(encoders.getSpeed(ENC_RB), DEC);
+        Serial.print("right-front: "); Serial.println(encoders.getSpeed(ENC_RF), DEC);
+#if 0
         Serial.print(encoders.getSpeed(ENC_LB), DEC);
         Serial.print(","); Serial.print(encoders.getSpeed(ENC_LF), DEC);
         Serial.print(","); Serial.print(encoders.getSpeed(ENC_RB), DEC);
         Serial.print(","); Serial.println(encoders.getSpeed(ENC_RF), DEC);
-
+#endif
+        Serial.println("Power:");
+        Serial.print("left-back: "); Serial.println(motors.getTargetPower(MOTOR_LB), DEC);
+        Serial.print("left-front: "); Serial.println(motors.getTargetPower(MOTOR_LF), DEC);
+        Serial.print("right-back: "); Serial.println(motors.getTargetPower(MOTOR_RB), DEC);
+        Serial.print("right-front: "); Serial.println(motors.getTargetPower(MOTOR_RF), DEC);
         speedtime = curtime + 500;
     }
-#endif
 
-    if (dump && !encoders.getSpeed(ENC_LB) && !encoders.getSpeed(ENC_LF) &&
-        !encoders.getSpeed(ENC_RB) && !encoders.getSpeed(ENC_RF))
+#if 0
+    if (((encoders.getDist(ENC_LB) + encoders.getDist(ENC_LF)) / 2) >= rundistl)
+    {
+        Serial.print("Stopping left after: ");
+        Serial.println(((encoders.getDist(ENC_LB) + encoders.getDist(ENC_LF)) / 2), DEC);
+        motors.setLeftSpeed(0);
+        dump = true;
+    }
+    if (((encoders.getDist(ENC_RB) + encoders.getDist(ENC_RF)) / 2) >= rundistr)
+    {
+        Serial.print("Stopping right after: ");
+        Serial.println(((encoders.getDist(ENC_RB) + encoders.getDist(ENC_RF)) / 2), DEC);
+        motors.setRightSpeed(0);
+        dump = true;
+    }
+#endif
+    if (running && /*((curtime - runtime) > 1000) && !encoders.getSpeed(ENC_LB) &&
+        !encoders.getSpeed(ENC_LF) && !encoders.getSpeed(ENC_RB) &&
+        !encoders.getSpeed(ENC_RF)*/ motors.finishedMoving())
     {
         Serial.println("Run finished!");
         Serial.print("left-back: "); Serial.println(encoders.getDist(ENC_LB), DEC);
@@ -124,7 +139,7 @@ void loop()
         Serial.print("right-back: "); Serial.println(encoders.getDist(ENC_RB), DEC);
         Serial.print("right-front: "); Serial.println(encoders.getDist(ENC_RF), DEC);
         encoders.resetDist();
-        dump = false;
+        running = false;
     }
 
     rover5Task();
