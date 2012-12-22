@@ -85,8 +85,8 @@ void CEncoders::update()
 {
     for (uint8_t e=0; e<ENC_COUNT; ++e)
     {
-        // Left-front and right-back encoders are inverted
-        if ((e == ENC_LF) || (e == ENC_RB))
+        // Left-back and right-front encoders are inverted
+        if ((e == ENC_LB) || (e == ENC_RF))
             encSpeed[e] = -(::encTicks[e]);
         else
             encSpeed[e] = ::encTicks[e];

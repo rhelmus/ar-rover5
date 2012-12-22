@@ -12,3 +12,5 @@ Examples/nunchuck/nunchuck_funcs.h
 Examples/nunchuck/nunchuck.cpp
 Examples/calibration/calibration.cpp
 Examples/calibration/CMakeLists.txt
+sharpir.h
+sharpir.cpp

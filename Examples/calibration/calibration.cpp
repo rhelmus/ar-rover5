@@ -9,8 +9,7 @@ namespace {
 
 enum
 {
-    SW_LOW_PIN = 27,
-    SW_HIGH_PIN = 29,
+    SW_PIN = 22,
 
     RUN_DIST = 70,
     RUN_ROTATION = 180,
@@ -28,7 +27,7 @@ static struct
 
 bool switchChanged(void)
 {
-    const uint8_t sw = digitalRead(SW_LOW_PIN);
+    const uint8_t sw = digitalRead(SW_PIN);
 
     if (sw != switchData.curState)
     {
@@ -52,11 +51,8 @@ bool switchChanged(void)
 
 void setup()
 {
-    pinMode(SW_LOW_PIN, INPUT);
-    digitalWrite(SW_LOW_PIN, HIGH);
-
-    pinMode(SW_HIGH_PIN, OUTPUT);
-    digitalWrite(SW_HIGH_PIN, LOW);
+    pinMode(SW_PIN, INPUT);
+    digitalWrite(SW_PIN, HIGH);
 
     Serial.begin(115200);
 
@@ -80,7 +76,8 @@ void loop()
         if (switchChanged() && (switchData.curState == HIGH))
         {
             motors.enable();
-
+            Serial.print("Battery: "); Serial.println(analogRead(PIN_BATTERY), DEC);
+#if 1
 #ifdef CALIB_FORWARD
             motors.moveDistCm(RUN_SPEED, RUN_DIST, DIR_FWD);
 #elif defined(CALIB_TURN_LEFT)
@@ -90,6 +87,7 @@ void loop()
 #endif
             running = true;
             runtime = curtime;
+#endif
         }
     }
     else if (speedtime < curtime)

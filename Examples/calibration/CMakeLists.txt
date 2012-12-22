@@ -22,11 +22,15 @@ find_package(Arduino 1.0 REQUIRED)
 #====================================================================#
 set(FIRMWARE_NAME calibration)
 
+set(${FIRMWARE_NAME}_LIBS m)
 set(${FIRMWARE_NAME}_BOARD mega)               # Arduino Target board
 set(${FIRMWARE_NAME}_SRCS calibration.cpp)  # Firmware sources
 set(${FIRMWARE_NAME}_PORT /dev/ttyUSB0)            # Serial upload port
 
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../..)
+
+# Fix for libm
+#set(CMAKE_EXE_LINKER_FLAGS -lm)
 
 #====================================================================#
 #  Target generation                                                 #
