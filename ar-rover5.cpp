@@ -108,7 +108,13 @@ void rover5Task()
         compass.read();
         int heading = compass.heading((LSM303::vector){0,-1,0});
         Serial.println(heading);
-        sevenSeg.setVal(heading);
+//        sevenSeg.setVal(heading);
+
+        if (motors.isEnabled())
+        {
+            const uint16_t batadc = analogRead(PIN_BATTERY);
+            sevenSeg.setVal(static_cast<float>(batadc) / 1024.0 * 5.0 * 2.0, 2);
+        }
 
         ADCCheckDelay = curtime + 400;
     }

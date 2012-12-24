@@ -46,6 +46,7 @@ public:
     void init(void);
     void enable(void);
     void disable(void);
+    bool isEnabled(void) const { return enabled; }
 
     void setMotorSpeed(EMotor m, uint8_t s);
     void setLeftSpeed(uint8_t s)

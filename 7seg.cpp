@@ -17,13 +17,14 @@ void C7Seg::drawSegments(uint8_t d)
     case 3: dpin = PIN_7SEG_D4; break;
     }
 
-    digitalWrite(PIN_7SEG_A, (segLEDs[d].a) ? LOW : HIGH);
-    digitalWrite(PIN_7SEG_B, (segLEDs[d].b) ? LOW : HIGH);
-    digitalWrite(PIN_7SEG_C, (segLEDs[d].c) ? LOW : HIGH);
-    digitalWrite(PIN_7SEG_D, (segLEDs[d].d) ? LOW : HIGH);
-    digitalWrite(PIN_7SEG_E, (segLEDs[d].e) ? LOW : HIGH);
-    digitalWrite(PIN_7SEG_F, (segLEDs[d].f) ? LOW : HIGH);
-    digitalWrite(PIN_7SEG_G, (segLEDs[d].g) ? LOW : HIGH);
+    digitalWrite(PIN_7SEG_A, (digits[d].a) ? LOW : HIGH);
+    digitalWrite(PIN_7SEG_B, (digits[d].b) ? LOW : HIGH);
+    digitalWrite(PIN_7SEG_C, (digits[d].c) ? LOW : HIGH);
+    digitalWrite(PIN_7SEG_D, (digits[d].d) ? LOW : HIGH);
+    digitalWrite(PIN_7SEG_E, (digits[d].e) ? LOW : HIGH);
+    digitalWrite(PIN_7SEG_F, (digits[d].f) ? LOW : HIGH);
+    digitalWrite(PIN_7SEG_G, (digits[d].g) ? LOW : HIGH);
+    digitalWrite(PIN_7SEG_DEC, (digits[d].dec) ? LOW : HIGH);
 
     digitalWrite(dpin, HIGH);
     delayMicroseconds(50);
@@ -49,7 +50,6 @@ void C7Seg::init()
     digitalWrite(PIN_7SEG_D2, LOW);
     digitalWrite(PIN_7SEG_D3, LOW);
     digitalWrite(PIN_7SEG_D4, LOW);
-    digitalWrite(PIN_7SEG_DEC, HIGH);
 
     clear();
 }
@@ -58,76 +58,87 @@ void C7Seg::update()
 {
     for (uint8_t d=0; d<4; ++d)
     {
-        if (segLEDs[d].enabled)
+        if (digits[d].a || digits[d].b || digits[d].c  || digits[d].d || digits[d].e ||
+            digits[d].f || digits[d].g || digits[d].dec)
             drawSegments(d);
     }
 }
 
 void C7Seg::clear()
 {
-    memset(segLEDs, 0, sizeof(segLEDs));
+    memset(digits, 0, sizeof(digits));
+}
+
+void C7Seg::clearDec()
+{
+    for (uint8_t d=0; d<4; ++d)
+        digits[d].dec = false;
 }
 
 void C7Seg::setDigit(uint8_t d, uint8_t n)
 {
-    segLEDs[d].enabled = true;
-
     if (n == 0)
     {
-        segLEDs[d].a = segLEDs[d].b = segLEDs[d].c = segLEDs[d].d = true;
-        segLEDs[d].e = segLEDs[d].f = true;
-        segLEDs[d].g = false;
+        digits[d].a = digits[d].b = digits[d].c = digits[d].d = true;
+        digits[d].e = digits[d].f = true;
+        digits[d].g = false;
     }
     else if (n == 1)
     {
-        segLEDs[d].a = segLEDs[d].d = segLEDs[d].e = segLEDs[d].f = segLEDs[d].g = false;
-        segLEDs[d].b = segLEDs[d].c = true;
+        digits[d].a = digits[d].d = digits[d].e = digits[d].f = digits[d].g = false;
+        digits[d].b = digits[d].c = true;
     }
     else if (n == 2)
     {
-        segLEDs[d].a = segLEDs[d].b = segLEDs[d].d = segLEDs[d].e = segLEDs[d].g = true;
-        segLEDs[d].c = segLEDs[d].f = false;
+        digits[d].a = digits[d].b = digits[d].d = digits[d].e = digits[d].g = true;
+        digits[d].c = digits[d].f = false;
     }
     else if (n == 3)
     {
-        segLEDs[d].a = segLEDs[d].b = segLEDs[d].c = segLEDs[d].d = segLEDs[d].g = true;
-        segLEDs[d].e = segLEDs[d].f = false;
+        digits[d].a = digits[d].b = digits[d].c = digits[d].d = digits[d].g = true;
+        digits[d].e = digits[d].f = false;
     }
     else if (n == 4)
     {
-        segLEDs[d].b = segLEDs[d].c = segLEDs[d].f = segLEDs[d].g = true;
-        segLEDs[d].a = segLEDs[d].d = segLEDs[d].e = false;
+        digits[d].b = digits[d].c = digits[d].f = digits[d].g = true;
+        digits[d].a = digits[d].d = digits[d].e = false;
     }
     else if (n == 5)
     {
-        segLEDs[d].a = segLEDs[d].c = segLEDs[d].d = segLEDs[d].f = segLEDs[d].g = true;
-        segLEDs[d].b = segLEDs[d].e = false;
+        digits[d].a = digits[d].c = digits[d].d = digits[d].f = digits[d].g = true;
+        digits[d].b = digits[d].e = false;
     }
     else if (n == 6)
     {
-        segLEDs[d].c = segLEDs[d].d = segLEDs[d].e = segLEDs[d].f = segLEDs[d].g = true;
-        segLEDs[d].a = segLEDs[d].b = false;
+        digits[d].c = digits[d].d = digits[d].e = digits[d].f = digits[d].g = true;
+        digits[d].a = digits[d].b = false;
     }
     else if (n == 7)
     {
-        segLEDs[d].a = segLEDs[d].b = segLEDs[d].c = true;
-        segLEDs[d].d = segLEDs[d].e = segLEDs[d].f = segLEDs[d].g = false;
+        digits[d].a = digits[d].b = digits[d].c = true;
+        digits[d].d = digits[d].e = digits[d].f = digits[d].g = false;
     }
     else if (n == 8)
     {
-        segLEDs[d].a = segLEDs[d].b = segLEDs[d].c = segLEDs[d].d = true;
-        segLEDs[d].e = segLEDs[d].f = segLEDs[d].g = true;
+        digits[d].a = digits[d].b = digits[d].c = digits[d].d = true;
+        digits[d].e = digits[d].f = digits[d].g = true;
     }
     else // if (n == 9)
     {
-        segLEDs[d].a = segLEDs[d].b = segLEDs[d].c = segLEDs[d].f = segLEDs[d].g = true;
-        segLEDs[d].d = segLEDs[d].e = false;
+        digits[d].a = digits[d].b = digits[d].c = digits[d].f = digits[d].g = true;
+        digits[d].d = digits[d].e = false;
     }
 }
 
+void C7Seg::setDec(uint8_t d)
+{
+    digits[d].dec = true;
+}
 
 void C7Seg::setVal(uint16_t v)
 {
+    clearDec();
+
     uint8_t d = 3;
     while (v)
     {
@@ -137,4 +148,10 @@ void C7Seg::setVal(uint16_t v)
             break;
         --d;
     }
+}
+
+void C7Seg::setVal(float v, uint8_t d)
+{
+    setVal(static_cast<uint16_t>(v * pow(10, d)));
+    setDec(3-d);
 }
