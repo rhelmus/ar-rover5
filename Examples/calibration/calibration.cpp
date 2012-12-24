@@ -1,3 +1,8 @@
+#include <Wire.h>
+#include <LSM303.h>
+#include <Servo.h>
+#include <TimerOne.h>
+
 #include <ar-rover5.h>
 
 //#define CALIB_FORWARD
@@ -81,7 +86,7 @@ void loop()
 #ifdef CALIB_FORWARD
             motors.moveDistCm(RUN_SPEED, RUN_DIST, DIR_FWD);
 #elif defined(CALIB_TURN_LEFT)
-            motors.turnAngle(RUN_SPEED, 180, DIR_LEFT);
+//            motors.turnAngle(RUN_SPEED, 180, DIR_LEFT);
 #elif defined(CALIB_TURN_RIGHT)
             motors.turn(RUN_SPEED, DIR_RIGHT);
 #endif

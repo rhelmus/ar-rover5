@@ -1,5 +1,10 @@
 #include <ar-rover5.h>
 
+#include <Wire.h>
+#include <LSM303.h>
+#include <Servo.h>
+#include <TimerOne.h>
+
 namespace {
 
 enum

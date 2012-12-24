@@ -14,3 +14,5 @@ Examples/calibration/calibration.cpp
 Examples/calibration/CMakeLists.txt
 sharpir.h
 sharpir.cpp
+7seg.h
+7seg.cpp

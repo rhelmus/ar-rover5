@@ -1,10 +1,7 @@
 #include "ar-rover5.h"
-#include "constants.h"
 
-#include <LSM303.h>
 #include <Servo.h>
 #include <TimerOne.h>
-#include <Wire.h>
 
 
 namespace {
@@ -34,31 +31,10 @@ void initRover5()
     digitalWrite(PIN_LED_YELLOW, HIGH);
 #endif
 
-    pinMode(PIN_7SEG_A, OUTPUT);
-    pinMode(PIN_7SEG_B, OUTPUT);
-    pinMode(PIN_7SEG_C, OUTPUT);
-    pinMode(PIN_7SEG_D, OUTPUT);
-    pinMode(PIN_7SEG_E, OUTPUT);
-    pinMode(PIN_7SEG_F, OUTPUT);
-    pinMode(PIN_7SEG_G, OUTPUT);
-    pinMode(PIN_7SEG_DEC, OUTPUT);
-    pinMode(PIN_7SEG_D1, OUTPUT);
-    pinMode(PIN_7SEG_D2, OUTPUT);
-    pinMode(PIN_7SEG_D3, OUTPUT);
-    pinMode(PIN_7SEG_D4, OUTPUT);
-
-    digitalWrite(PIN_7SEG_D2, HIGH);
-    digitalWrite(PIN_7SEG_A, LOW);
-    digitalWrite(PIN_7SEG_B, LOW);
-    digitalWrite(PIN_7SEG_C, LOW);
-    digitalWrite(PIN_7SEG_D, LOW);
-    digitalWrite(PIN_7SEG_E, LOW);
-    digitalWrite(PIN_7SEG_F, LOW);
-    digitalWrite(PIN_7SEG_G, HIGH);
-    digitalWrite(PIN_7SEG_DEC, HIGH);
 
     encoders.init();
     motors.init();
+    sevenSeg.init();
 
     Timer1.initialize(200000); // Every 200 ms
     Timer1.attachInterrupt(timerISR);
@@ -71,6 +47,7 @@ void initRover5()
     compass.enableDefault();
     compass.m_min.x = -601; compass.m_min.y = -558; compass.m_min.z = -630;
     compass.m_max.x = +358; compass.m_max.y = +386; compass.m_max.z = 475;
+    compass.setTimeout(100);
 }
 
 void rover5Task()
@@ -131,7 +108,10 @@ void rover5Task()
         compass.read();
         int heading = compass.heading((LSM303::vector){0,-1,0});
         Serial.println(heading);
+        sevenSeg.setVal(heading);
 
         ADCCheckDelay = curtime + 400;
-    }    
+    }
+
+    sevenSeg.update();
 }
