@@ -25,7 +25,7 @@ set(${FIRMWARE_NAME}_BOARD mega)               # Arduino Target board
 set(${FIRMWARE_NAME}_SRCS nunchuck.cpp)  # Firmware sources
 set(${FIRMWARE_NAME}_PORT /dev/ttyUSB0)            # Serial upload port
 
-link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../..)
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../../../sketches/libraries)
 
 #====================================================================#
 #  Target generation                                                 #
