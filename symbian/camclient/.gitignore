@@ -1,0 +1,14 @@
+Makefile
+*.pro.user
+*.mmp
+*.pkg
+bld.inf*
+ABLD.BAT
+*.mk
+*.rss
+*.sis
+*.loc
+*.sisx
+.make.cache
+moc_*
+*.moc
