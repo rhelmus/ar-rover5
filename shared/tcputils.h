@@ -3,6 +3,8 @@
 
 #include "shared.h"
 
+#include <stdint.h>
+
 #include <QByteArray>
 #include <QDataStream>
 

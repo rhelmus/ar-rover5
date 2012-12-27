@@ -6,11 +6,17 @@
 
 QT       += core gui network
 
+CONFIG += mobility
+MOBILITY = connectivity
+
 TARGET = rover5-control
 TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        rover5control.cpp
+        rover5control.cpp \
+    ../../shared/tcputils.cpp
 
-HEADERS  += rover5control.h
+HEADERS  += rover5control.h \
+    ../../shared/tcputils.h \
+    ../../shared/shared.h
