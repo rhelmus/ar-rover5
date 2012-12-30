@@ -29,13 +29,57 @@ void CBTInterface::btDisconnected()
     qDebug() << "Lost bt connection";
     btSendTimer->stop();
     btSendQueue.clear();
+    recBuffer.clear();
     emit disconnected();
 }
 
 void CBTInterface::btHasData()
 {
+    // BT message format:
+    //  0: Start marker
+    //  1: Msg size
+    //  2: Msg type
+    //  3 .. n-1: Data
+    //  n: End marker
+
     qDebug() << "Got some bt data:" << bluetoothSocket->bytesAvailable() << "bytes";
-    bluetoothSocket->readAll();
+
+    recBuffer += bluetoothSocket->readAll();
+
+    int msgstartind = recBuffer.indexOf(MSG_BT_STARTMARKER);
+    if (msgstartind == -1)
+    {
+        recBuffer.clear(); // No message start detected, remove dirt
+        return; // wait untill we got something useful
+    }
+
+    const int extramsgsize = 3; // start- and end marker and msg size
+    while (msgstartind != -1)
+    {
+        if (msgstartind > 0) // dirt in between?
+        {
+            recBuffer.remove(0, msgstartind);
+            msgstartind = 0;
+        }
+
+        if (recBuffer.size() < extramsgsize)
+            return; // wait for more
+
+        const uint16_t msgsize = recBuffer[1];
+        if (recBuffer.size() < (msgsize + extramsgsize))
+            return; // wait for more
+
+        // End marker present?
+        if (recBuffer.at(msgsize + extramsgsize - 1) == MSG_BT_ENDMARKER)
+        {
+            emit msgReceived(static_cast<EMessage>((int)recBuffer[2]),
+                    recBuffer.mid(3, msgsize-1));
+        }
+
+        recBuffer.remove(0, msgsize + extramsgsize);
+        msgstartind = recBuffer.indexOf(MSG_BT_STARTMARKER);
+    }
+
     /*while (bluetoothSocket->canReadLine())
         qDebug() << bluetoothSocket->readLine();*/
 //    qDebug() << "Data:" << bluetoothSocket->readAll();

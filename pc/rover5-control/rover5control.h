@@ -1,6 +1,8 @@
 #ifndef ROVER5CONTROL_H
 #define ROVER5CONTROL_H
 
+#include "../../shared/shared.h"
+
 #include <stdint.h>
 
 #include <QMainWindow>
@@ -12,13 +14,22 @@ class QTcpServer;
 class QTcpSocket;
 
 class CBTInterface;
+class CNumStatWidget;
 
 class CRover5Control : public QMainWindow
 {
     Q_OBJECT
 
-    QLabel *camWidget;
+    QLabel *smallCamWidget, *largeCamWidget;
     QPushButton *btConnectButton;
+
+    CNumStatWidget *motorTargetPowerStatW, *motorTargetSpeedStatW, *motorTargetDistStatW;
+    CNumStatWidget *motorSetPowerStatW, *motorSetSpeedStatW, *motorSetDistStatW;
+    CNumStatWidget *motorCurrentStatW;
+    CNumStatWidget *sharpIRLRStatW, *sharpIRLFRFStatW, *sharpIRFrontStatW;
+    CNumStatWidget *sharpIRTurretStatW;
+    CNumStatWidget *batteryStatW, *servoPosStatW, *pingStatW;
+    CNumStatWidget *headingStatW;
 
     QTcpServer *tcpServer;
     QSignalMapper *tcpDisconnectMapper;
@@ -26,6 +37,14 @@ class CRover5Control : public QMainWindow
     uint32_t tcpReadBlockSize;
 
     CBTInterface *btInterface;
+
+    QWidget *createTopTabWidget(void);
+    QWidget *createGeneralTab(void);
+    QWidget *createCamViewTab(void);
+    QWidget *createBottomTabWidget(void);
+    QWidget *createDriveTab(void);
+    QWidget *createCamControlTab(void);
+    QLabel *createSmallCamWidget(void);
 
     void initTcpServer(void);
     bool canSendTcp(void) const;
@@ -38,6 +57,7 @@ private slots:
     void toggleBtConnection(void);
     void btConnected(void);
     void btDisconnected(void);
+    void btMsgReceived(EMessage m, QByteArray data);
     
 public:
     CRover5Control(QWidget *parent = 0);

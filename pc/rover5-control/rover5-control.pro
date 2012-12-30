@@ -16,9 +16,11 @@ TEMPLATE = app
 SOURCES += main.cpp\
         rover5control.cpp \
     ../../shared/tcputils.cpp \
-    btinterface.cpp
+    btinterface.cpp \
+    numstatwidget.cpp
 
 HEADERS  += rover5control.h \
     ../../shared/tcputils.h \
     ../../shared/shared.h \
-    btinterface.h
+    btinterface.h \
+    numstatwidget.h

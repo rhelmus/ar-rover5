@@ -48,7 +48,11 @@ void TWIReceive(int bytes)
     {
         bytesPassed += (bytes + 1);
         if (serialBluetooth.connected)
+        {
+            TWIPassBuffer.push(MSG_BT_STARTMARKER);
+            TWIPassBuffer.push(bytes + 1);
             TWIPassBuffer.push(lastRecTWIMessage);
+        }
 
         while (bytes)
         {
@@ -58,6 +62,9 @@ void TWIReceive(int bytes)
                 Wire.read(); // Read & discard
             --bytes;
         }
+
+        if (serialBluetooth.connected)
+            TWIPassBuffer.push(MSG_BT_ENDMARKER);
     }
 
 
@@ -77,7 +84,7 @@ void setup()
 
     Wire.begin(BRIDGE_TWI_ADDRESS);
     Wire.onRequest(TWIRequest);
-//    Wire.onReceive(TWIReceive);
+    Wire.onReceive(TWIReceive);
 
     Serial.println(F("Initialized"));
     Serial.print(F("Free RAM: ")); Serial.println(freeRam());
@@ -87,22 +94,37 @@ void loop()
 {
     usbDev.Task();
 
-    if (serialBluetooth.connected)
-    {
-        while (!TWIPassBuffer.isEmpty())
-            serialBluetooth.print(TWIPassBuffer.pop());
-    }
-
-#if 1
     const uint32_t curtime = millis();
     static uint32_t updelay;
 
     if (updelay < curtime)
     {
-        updelay = curtime + 1000;
-//        Serial.print("Passed "); Serial.print(bytesPassed, DEC); Serial.println(" through");
+        updelay = curtime + 10;
+
         if (serialBluetooth.connected)
-            serialBluetooth.println(F("Hello from Arduino"));
+        {
+            uint8_t buf[15];
+            uint8_t count = 0;
+            while (!TWIPassBuffer.isEmpty() && (count < 15))
+            {
+                buf[count] = TWIPassBuffer.pop();
+                ++count;
+            }
+            serialBluetooth.print(buf, count);
+        }
+
+
+//        Serial.print("Passed "); Serial.print(bytesPassed, DEC); Serial.println(" through");
+        /*if (serialBluetooth.connected)
+            serialBluetooth.println(F("Hello from Arduino"));*/
+        /*
+        if (serialBluetooth.connected)
+        {
+            serialBluetooth.print(MSG_BT_STARTMARKER);
+            serialBluetooth.print(6);
+            serialBluetooth.print(MSG_BATTERY);
+            serialBluetooth.print(F("hello"));
+            serialBluetooth.print(MSG_BT_ENDMARKER);
+        }*/
     }
-#endif
 }

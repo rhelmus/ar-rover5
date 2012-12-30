@@ -20,12 +20,16 @@ enum EMessage
     MSG_ENCODER_DISTANCE,
     MSG_SERVO,
     MSG_BATTERY,
+    MSG_HEADING,
 
     MSG_NONE,
 
+    MSG_BT_STARTMARKER,
+    MSG_BT_ENDMARKER,
+
     // Range to pass through unchanged from spider to controller
     MSG_PASS_START = MSG_SHARPIR,
-    MSG_PASS_END = MSG_BATTERY
+    MSG_PASS_END = MSG_HEADING
 };
 
 enum
@@ -58,7 +62,7 @@ enum
 
 inline uint16_t bytesToInt(uint8_t low, uint8_t high)
 {
-    return static_cast<uint16_t>(low << 8 | high);
+    return static_cast<uint16_t>(low | (high << 8));
 }
 
 inline uint32_t bytesToLong(uint8_t b1, uint8_t b2, uint8_t b3, uint8_t b4)

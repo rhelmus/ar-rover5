@@ -6,93 +6,13 @@
 #include "sharpir.h"
 
 #include <Arduino.h>
+#include <LSM303.h>
 #include <Servo.h>
 #include <Wire.h>
 
 CRemoteInterface remoteInterface;
 
 namespace {
-
-#if 0
-uint32_t TWIReqLong(EMessage m)
-{
-    Wire.beginTransmission(BRIDGE_TWI_ADDRESS);
-    Wire.write(m);
-    Wire.endTransmission();
-
-    Wire.requestFrom(BRIDGE_TWI_ADDRESS, 4);
-    return bytesToLong(Wire.read(), Wire.read(),
-                       Wire.read(), Wire.read());
-}
-
-void TWISendBytes(EMessage m, uint8_t *buf, uint8_t n)
-{
-    Wire.beginTransmission(BRIDGE_TWI_ADDRESS);
-    Wire.write(m);
-    Wire.write(buf, n);
-    Wire.endTransmission();
-}
-
-void TWISendByte(EMessage m, uint8_t b)
-{
-    TWISendBytes(m, &b, 1);
-}
-
-void TWISendInt(EMessage m, uint16_t i)
-{
-    uint8_t buf[2];
-    intToBytes(i, buf);
-    TWISendBytes(m, buf, 2);
-}
-
-void TWISendLong(EMessage m, uint32_t i)
-{
-    uint8_t buf[4];
-    intToBytes(i, buf);
-    TWISendBytes(m, buf, 4);
-}
-
-class CTWISender
-{
-    bool sended;
-
-public:
-    CTWISender(EMessage m) : sended(false)
-    { Wire.beginTransmission(BRIDGE_TWI_ADDRESS); Wire.send(m); }
-    ~CTWISender(void) { if (!sended) end(); }
-
-    void end(void) { Wire.endTransmission(); }
-
-    CTWISender &operator <<(uint8_t data)
-    {
-        Wire.write(data);
-        return *this;
-    }
-
-    CTWISender &operator <<(uint16_t data)
-    {
-        uint8_t buf[2];
-        intToBytes(data, buf);
-        Wire.write(buf, 2);
-        return *this;
-    }
-
-    CTWISender &operator <<(uint32_t data)
-    {
-        uint8_t buf[4];
-        longToBytes(data, buf);
-        Wire.write(buf, 4);
-        return *this;
-    }
-
-    void sendData(uint8_t *data, bytes)
-    {
-        Wire.write(data, bytes);
-        return *this;
-    }
-};
-
-#endif
 
 void TWIStartMessage(EMessage m)
 {
@@ -191,7 +111,14 @@ void CRemoteInterface::update()
         Wire.endTransmission();
 
         TWIStartMessage(MSG_BATTERY);
-        TWISendInt(analogRead(PIN_BATTERY));
+        TWISendInt(analogRead(PIN_BATTERY)); // UNDONE
+        Wire.endTransmission();
+
+        // UNDONE
+        getCompass().read();
+        const int heading = getCompass().heading();
+        TWIStartMessage(MSG_HEADING);
+        TWISendInt(heading);
         Wire.endTransmission();
     }
 }

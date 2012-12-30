@@ -1,6 +1,9 @@
 #ifndef BTINTERFACE_H
 #define BTINTERFACE_H
 
+#include "../../shared/shared.h"
+
+#include <QByteArray>
 #include <QObject>
 #include <QQueue>
 
@@ -19,6 +22,7 @@ class CBTInterface : public QObject
     QtMobility::QBluetoothSocket *bluetoothSocket;
     QQueue<QByteArray> btSendQueue;
     QTimer *btSendTimer;
+    QByteArray recBuffer;
 
 private slots:
     void btConnected(void);
@@ -36,6 +40,7 @@ public:
 signals:
     void connected(void);
     void disconnected(void);
+    void msgReceived(EMessage, QByteArray);
 };
 
 #endif // BTINTERFACE_H
