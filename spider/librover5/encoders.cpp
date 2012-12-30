@@ -10,9 +10,9 @@ namespace {
 // Encoder code based on LMR: http://letsmakerobots.com/node/24031
 
 const int8_t QEM[16] = { 0, -1, 1, /*2*/0, 1, 0, /*2*/0, -1, -1, /*2*/0, 0, 1, /*2*/0, 1, -1, 0};
-volatile uint8_t prevEncReading[ENC_COUNT];
-volatile int16_t encTicks[ENC_COUNT];
-volatile uint32_t encDist[ENC_COUNT];
+volatile uint8_t prevEncReading[ENC_END];
+volatile int16_t encTicks[ENC_END];
+volatile uint32_t encDist[ENC_END];
 
 void intEncLB(void)
 {
@@ -83,7 +83,7 @@ void CEncoders::init()
 
 void CEncoders::update()
 {
-    for (uint8_t e=0; e<ENC_COUNT; ++e)
+    for (uint8_t e=0; e<ENC_END; ++e)
     {
         // Left-back and right-front encoders are inverted
         if ((e == ENC_LB) || (e == ENC_RF))

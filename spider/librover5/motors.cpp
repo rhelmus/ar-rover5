@@ -53,7 +53,7 @@ void CMotors::init()
     pinMode(PIN_MOTOR_RF_PWM, OUTPUT);
     pinMode(PIN_MOTOR_RF_DIR, OUTPUT);
 
-    for (uint8_t m=0; m<MOTOR_COUNT; ++m)
+    for (uint8_t m=0; m<MOTOR_END; ++m)
         setEffMotorDirection(static_cast<EMotor>(m), DIR_FWD);
 
     enabled = false;
@@ -105,7 +105,7 @@ void CMotors::turn(uint8_t s, ETurnDirection d)
 
 void CMotors::moveDist(uint8_t s, uint32_t dist, EMotorDirection dir)
 {
-    for (uint8_t m=0; m<MOTOR_COUNT; ++m)
+    for (uint8_t m=0; m<MOTOR_END; ++m)
     {
         motorData[m].targetDistance = dist;
         setMotorDirection(static_cast<EMotor>(m), dir);
@@ -115,7 +115,7 @@ void CMotors::moveDist(uint8_t s, uint32_t dist, EMotorDirection dir)
 
 void CMotors::turnDist(uint8_t s, uint32_t dist, ETurnDirection dir)
 {
-    for (uint8_t m=0; m<MOTOR_COUNT; ++m)
+    for (uint8_t m=0; m<MOTOR_END; ++m)
     {
         motorData[m].targetDistance = dist;
 
@@ -145,7 +145,7 @@ uint16_t CMotors::getCurrent(EMotor m) const
 
 bool CMotors::finishedMoving() const
 {
-    for (uint8_t m=0; m<MOTOR_COUNT; ++m)
+    for (uint8_t m=0; m<MOTOR_END; ++m)
     {
         if (motorData[m].targetDistance)
             return false;
@@ -203,7 +203,7 @@ void CMotors::update()
 #endif
     }
 
-    for (uint8_t m=0; m<MOTOR_COUNT; ++m)
+    for (uint8_t m=0; m<MOTOR_END; ++m)
     {
         if (motorData[m].targetDirection != motorData[m].setDirection)
         {

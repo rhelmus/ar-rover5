@@ -1,5 +1,7 @@
+#include "../../shared/shared.h"
 #include "librover5.h"
 
+#include <LSM303.h>
 #include <Servo.h>
 #include <TimerOne.h>
 
@@ -20,6 +22,7 @@ void timerISR(void)
 void initRover5()
 {
     pinMode(PIN_RELAY, OUTPUT);
+    digitalWrite(PIN_RELAY, HIGH);
 
 #if 0
     pinMode(PIN_LED_GREEN, OUTPUT);
@@ -43,11 +46,19 @@ void initRover5()
     servo.write(90);
 
     Wire.begin();
+#if 1
     compass.init();
     compass.enableDefault();
-    compass.m_min.x = -601; compass.m_min.y = -558; compass.m_min.z = -630;
-    compass.m_max.x = +358; compass.m_max.y = +386; compass.m_max.z = 475;
+    compass.m_min.x = -414; compass.m_min.y = -809; compass.m_min.z = -391;
+    compass.m_max.x = 520; compass.m_max.y = 212; compass.m_max.z = 632;
     compass.setTimeout(100);
+#endif
+
+#if 0
+    Wire.beginTransmission(BRIDGE_TWI_ADDRESS);
+    Wire.write(120); Wire.write(10); Wire.write(210);
+    Wire.endTransmission();
+#endif
 }
 
 void rover5Task()
@@ -105,19 +116,32 @@ void rover5Task()
         else
             spos += 15;*/
 
+#if 0
         compass.read();
         int heading = compass.heading((LSM303::vector){0,-1,0});
         Serial.println(heading);
-//        sevenSeg.setVal(heading);
-
+        sevenSeg.setVal(heading);
+#else
         if (motors.isEnabled())
         {
             const uint16_t batadc = analogRead(PIN_BATTERY);
             sevenSeg.setVal(static_cast<float>(batadc) / 1024.0 * 5.0 * 2.0, 2);
         }
+#endif
 
         ADCCheckDelay = curtime + 400;
     }
 
     sevenSeg.update();
+    remoteInterface.update();
+}
+
+Servo &getServo()
+{
+    return servo;
+}
+
+LSM303 &getCompass()
+{
+    return compass;
 }

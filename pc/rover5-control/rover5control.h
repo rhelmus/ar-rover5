@@ -4,11 +4,6 @@
 #include <stdint.h>
 
 #include <QMainWindow>
-#include <QQueue>
-
-namespace QtMobility {
-class QBluetoothSocket;
-}
 
 class QLabel;
 class QPushButton;
@@ -16,11 +11,11 @@ class QSignalMapper;
 class QTcpServer;
 class QTcpSocket;
 
+class CBTInterface;
+
 class CRover5Control : public QMainWindow
 {
     Q_OBJECT
-
-    enum { BTQUEUE_DELAY = 100 };
 
     QLabel *camWidget;
     QPushButton *btConnectButton;
@@ -30,14 +25,11 @@ class CRover5Control : public QMainWindow
     QTcpSocket *tcpClientSocket;
     uint32_t tcpReadBlockSize;
 
-    QtMobility::QBluetoothSocket *bluetoothSocket;
-    QQueue<QByteArray> btSendQueue;
-    QTimer *btSendTimer;
+    CBTInterface *btInterface;
 
     void initTcpServer(void);
     bool canSendTcp(void) const;
     void parseTcp(QDataStream &stream);
-    void initBluetooth(void);
 
 private slots:
     void tcpClientConnected(void);
@@ -46,9 +38,6 @@ private slots:
     void toggleBtConnection(void);
     void btConnected(void);
     void btDisconnected(void);
-    void btHasData(void);
-    void btSendFromQueue(void);
-    void btSendTest(void);
     
 public:
     CRover5Control(QWidget *parent = 0);

@@ -16,3 +16,6 @@ sharpir.h
 sharpir.cpp
 7seg.h
 7seg.cpp
+remoteinterface.h
+remoteinterface.cpp
+../../shared/shared.h

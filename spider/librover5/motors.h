@@ -1,16 +1,10 @@
 #ifndef MOTORS_H
 #define MOTORS_H
 
-#include <stdint.h>
+#include "../../shared/shared.h"
+#include "constants.h"
 
-enum EMotor
-{
-    MOTOR_LB=0,
-    MOTOR_LF,
-    MOTOR_RB,
-    MOTOR_RF,
-    MOTOR_COUNT
-};
+#include <stdint.h>
 
 enum EMotorDirection { DIR_FWD, DIR_BWD };
 enum ETurnDirection { DIR_LEFT, DIR_RIGHT };
@@ -36,7 +30,7 @@ class CMotors
               targetDirection(DIR_FWD), setDirection(DIR_FWD) { }
     };
 
-    volatile SMotor motorData[MOTOR_COUNT];
+    volatile SMotor motorData[MOTOR_END];
     volatile bool enabled, fixedTurning;
 
     void setEffMotorSpeed(EMotor m, uint8_t s);
@@ -76,6 +70,9 @@ public:
 
     uint16_t getCurrent(EMotor m) const;
     uint8_t getTargetPower(EMotor m) const { return motorData[m].targetPower; }
+    uint8_t getSetPower(EMotor m) const { return motorData[m].setPower; }
+    uint16_t getTargetSpeed(EMotor m) const { return motorData[m].targetEncSpeed; }
+    uint32_t getTargetDistance(EMotor m) const { return motorData[m].targetDistance; }
     bool finishedMoving(void) const;
 
     void update(void);

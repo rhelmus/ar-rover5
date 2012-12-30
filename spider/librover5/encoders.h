@@ -1,13 +1,13 @@
 #ifndef ENCODERS_H
 #define ENCODERS_H
 
-#include <stdint.h>
+#include "../../shared/shared.h"
 
-enum EEncoder { ENC_LB=0, ENC_LF, ENC_RB, ENC_RF, ENC_COUNT };
+#include <stdint.h>
 
 class CEncoders
 {
-    volatile int16_t encSpeed[ENC_COUNT];
+    volatile int16_t encSpeed[ENC_END];
 
 public:
     void init(void);
