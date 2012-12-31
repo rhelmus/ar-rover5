@@ -45,7 +45,9 @@ void initRover5()
     servo.attach(PIN_SERVO);
     servo.write(90);
 
-    Wire.begin();
+    // Also initializes Wire
+    remoteInterface.init();
+
 #if 1
     compass.init();
     compass.enableDefault();

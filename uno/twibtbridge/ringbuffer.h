@@ -38,6 +38,7 @@ public:
         return ret;
     }
 
+    void clear(void) { inputIndex = outputIndex = count = 0; }
     uint16_t getCount(void) const volatile { return count; }
     bool isFull(void) const volatile { return (count == size); }
     bool isEmpty(void) const volatile { return (count == 0); }

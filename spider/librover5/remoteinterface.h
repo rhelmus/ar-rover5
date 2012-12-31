@@ -6,12 +6,12 @@
 class CRemoteInterface
 {
     bool allowRemoteControl;
-    uint32_t pingTime, updatePingDelay;
-    uint32_t statusSendDelay;
+    uint32_t pingTime, reqUpdateDelay, statusSendDelay;
 
 public:
-    CRemoteInterface(void) : allowRemoteControl(false), pingTime(0), updatePingDelay(0) { }
+    CRemoteInterface(void) : allowRemoteControl(false), pingTime(0), reqUpdateDelay(0) { }
 
+    void init(void);
     void setRemoteControlAllowed(bool r) { allowRemoteControl = r; }
     void update(void);
 };

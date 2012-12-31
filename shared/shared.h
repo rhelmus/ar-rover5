@@ -8,7 +8,7 @@ enum EMessage
     // Phone messages
     MSG_CAMFRAME = 0,
 
-    // Spider messages
+    // Spider to control messages
     MSG_PING,
     MSG_SHARPIR,
     MSG_MOTOR_TARGETPOWER,
@@ -21,11 +21,22 @@ enum EMessage
     MSG_SERVO,
     MSG_BATTERY,
     MSG_HEADING,
+    MSG_REQBTDATAN,
+    MSG_REQBTMSG,
 
-    MSG_NONE,
+    // Control to spider messages
+    MSG_PONG,
+    MSG_CMD_MOTORSPEED,
+    MSG_CMD_DRIVEDIST,
+    MSG_CMD_CONTINEOUSTURN,
+    MSG_CMD_TURNANGLE,
+    MSG_CMD_STOP,
 
+    // Bluetooth specific
     MSG_BT_STARTMARKER,
     MSG_BT_ENDMARKER,
+
+    MSG_NONE,
 
     // Range to pass through unchanged from spider to controller
     MSG_PASS_START = MSG_SHARPIR,
@@ -34,8 +45,10 @@ enum EMessage
 
 enum
 {
-    BRIDGE_TWI_ADDRESS = 10,
-    BRIDGE_PING_TIMEOUT = 500 // ping time (ms) should be less for active connection
+    SPIDER_TWI_ADDRESS = 10,
+    BRIDGE_TWI_ADDRESS = 11,
+    BRIDGE_PING_TIMEOUT = 500, // ping time (ms) should be less for active connection
+    BRIDGE_MAX_REQSIZE = 16
 };
 
 enum EMotor

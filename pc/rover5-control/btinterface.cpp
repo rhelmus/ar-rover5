@@ -87,7 +87,7 @@ void CBTInterface::btHasData()
 
 void CBTInterface::btSendFromQueue()
 {
-    if (bluetoothSocket->state() != QtMobility::QBluetoothSocket::ConnectedState)
+    if (!isConnected())
         btSendTimer->stop();
     else if (!btSendQueue.isEmpty())
         bluetoothSocket->write(btSendQueue.dequeue());
@@ -107,4 +107,27 @@ void CBTInterface::disconnectBT()
 bool CBTInterface::isConnected() const
 {
     return (bluetoothSocket->state() == QtMobility::QBluetoothSocket::ConnectedState);
+}
+
+void CBTInterface::send(const QByteArray &data)
+{
+    if (!isConnected())
+        return;
+
+    btSendQueue.enqueue(data);
+}
+
+
+CBTMessage::CBTMessage(EMessage m)
+{
+    data.push_back(static_cast<char>(MSG_BT_STARTMARKER));
+    data.push_back(static_cast<char>(0)); // Message size (to be filled in)
+    data.push_back(static_cast<char>(m));
+}
+
+CBTMessage::operator QByteArray()
+{
+    data[1] = data.size() - 2; // Minus size and start marker
+    data.push_back(static_cast<char>(MSG_BT_ENDMARKER));
+    return data;
 }

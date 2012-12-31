@@ -19,8 +19,14 @@ int freeRam()
 namespace {
 
 volatile EMessage lastRecTWIMessage = MSG_NONE;
-volatile uint32_t bytesPassed;
 volatile CRingBuffer<128> TWIPassBuffer;
+
+bool receivedBTStart, receivedBTMSGSize;
+uint8_t BTMsgSize, BTMsgBytesRead;
+CRingBuffer<BRIDGE_MAX_REQSIZE> tempBTMsgBuffer;
+// Room for max 8 messages, plus one byte for size of each
+volatile CRingBuffer<8 * (BRIDGE_MAX_REQSIZE + 1)> BTPassBuffer;
+volatile uint8_t BTMessagesReceived;
 
 USB usbDev;
 BTD bluetoothDev(&usbDev);
@@ -35,6 +41,18 @@ void TWIRequest(void)
         longToBytes(132560, buf);
         Wire.write(buf, 4);
     }
+    else if (lastRecTWIMessage == MSG_REQBTDATAN)
+        Wire.write(BTMessagesReceived);
+    else if (lastRecTWIMessage == MSG_REQBTMSG)
+    {
+        if (BTMessagesReceived > 0)
+        {
+            const uint8_t msgsize = BTPassBuffer.pop();
+            for (uint8_t i=0; i<msgsize; ++i)
+                Wire.write(BTPassBuffer.pop());
+            --BTMessagesReceived;
+        }
+    }
 
     lastRecTWIMessage = MSG_NONE;
 }
@@ -46,7 +64,6 @@ void TWIReceive(int bytes)
 
     if ((lastRecTWIMessage >= MSG_PASS_START) && (lastRecTWIMessage <= MSG_PASS_END))
     {
-        bytesPassed += (bytes + 1);
         if (serialBluetooth.connected)
         {
             TWIPassBuffer.push(MSG_BT_STARTMARKER);
@@ -66,12 +83,15 @@ void TWIReceive(int bytes)
         if (serialBluetooth.connected)
             TWIPassBuffer.push(MSG_BT_ENDMARKER);
     }
+    else // Discard any data from other (unknown) messages
+    {
+        while (bytes)
+        {
+            Wire.read();
+            --bytes;
+        }
+    }
 
-
-//    Serial.print("received:");
-//    while (Wire.available())
-//        Serial.print(Wire.read(), DEC);
-//    Serial.println("");
 }
 
 }
@@ -111,20 +131,48 @@ void loop()
                 ++count;
             }
             serialBluetooth.print(buf, count);
+
+            count = 0;
+            while (serialBluetooth.available() && (count < 15))
+            {
+                const uint8_t b = serialBluetooth.read();
+                if (!receivedBTStart)
+                    receivedBTStart = (b == MSG_BT_STARTMARKER);
+                else if (!receivedBTMSGSize)
+                {
+                    receivedBTMSGSize = true;
+                    BTMsgSize = b;
+                }
+                else if (BTMsgBytesRead < BTMsgSize)
+                {
+                    tempBTMsgBuffer.push(b);
+                    ++BTMsgBytesRead;
+                }
+                else
+                {
+                    // Msg got through OK?
+                    if ((b == MSG_BT_ENDMARKER) && !BTPassBuffer.isFull())
+                    {
+                        Wire.beginTransmission(SPIDER_TWI_ADDRESS);
+                        while (!tempBTMsgBuffer.isEmpty())
+                            Wire.write(tempBTMsgBuffer.pop());
+                        Wire.endTransmission();
+
+#if 0
+                        BTPassBuffer.push(BTMsgSize);
+                        while (!tempBTMsgBuffer.isEmpty())
+                            BTPassBuffer.push(tempBTMsgBuffer.pop());
+                        ++BTMessagesReceived;
+#endif
+                    }
+
+                    receivedBTStart = receivedBTMSGSize = false;
+                    BTMsgBytesRead = 0;
+                    tempBTMsgBuffer.clear();
+                }
+
+                ++count;
+            }
         }
-
-
-//        Serial.print("Passed "); Serial.print(bytesPassed, DEC); Serial.println(" through");
-        /*if (serialBluetooth.connected)
-            serialBluetooth.println(F("Hello from Arduino"));*/
-        /*
-        if (serialBluetooth.connected)
-        {
-            serialBluetooth.print(MSG_BT_STARTMARKER);
-            serialBluetooth.print(6);
-            serialBluetooth.print(MSG_BATTERY);
-            serialBluetooth.print(F("hello"));
-            serialBluetooth.print(MSG_BT_ENDMARKER);
-        }*/
     }
 }

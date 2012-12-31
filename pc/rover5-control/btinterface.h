@@ -36,11 +36,23 @@ public:
     void connectBT(void);
     void disconnectBT(void);
     bool isConnected(void) const;
+    void send(const QByteArray &data);
 
 signals:
     void connected(void);
     void disconnected(void);
     void msgReceived(EMessage, QByteArray);
+};
+
+class CBTMessage
+{
+    QByteArray data;
+
+public:
+    CBTMessage(EMessage m);
+
+    CBTMessage &operator <<(uint8_t b) { data.push_back(b); return *this; }
+    operator QByteArray(void);
 };
 
 #endif // BTINTERFACE_H

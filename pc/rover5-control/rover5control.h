@@ -2,6 +2,7 @@
 #define ROVER5CONTROL_H
 
 #include "../../shared/shared.h"
+#include "drivewidget.h"
 
 #include <stdint.h>
 
@@ -58,6 +59,8 @@ private slots:
     void btConnected(void);
     void btDisconnected(void);
     void btMsgReceived(EMessage m, QByteArray data);
+    void btSendTest(void);
+    void setDriveDirection(CDriveWidget::DriveFlags dir);
     
 public:
     CRover5Control(QWidget *parent = 0);

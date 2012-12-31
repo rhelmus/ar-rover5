@@ -17,10 +17,14 @@ SOURCES += main.cpp\
         rover5control.cpp \
     ../../shared/tcputils.cpp \
     btinterface.cpp \
-    numstatwidget.cpp
+    numstatwidget.cpp \
+    utils.cpp \
+    drivewidget.cpp
 
 HEADERS  += rover5control.h \
     ../../shared/tcputils.h \
     ../../shared/shared.h \
     btinterface.h \
-    numstatwidget.h
+    numstatwidget.h \
+    utils.h \
+    drivewidget.h

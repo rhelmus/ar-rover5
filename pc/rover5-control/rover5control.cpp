@@ -1,6 +1,7 @@
 #include "btinterface.h"
 #include "numstatwidget.h"
 #include "rover5control.h"
+#include "utils.h"
 
 #include <QtGui>
 #include <QTcpServer>
@@ -25,6 +26,10 @@ CRover5Control::CRover5Control(QWidget *parent)
 
     vbox->addWidget(btConnectButton = new QPushButton("BT connect"));
     connect(btConnectButton, SIGNAL(clicked()), SLOT(toggleBtConnection()));
+
+    QPushButton *button = new QPushButton("BT send");
+    connect(button, SIGNAL(clicked()), SLOT(btSendTest()));
+    vbox->addWidget(button);
 
     initTcpServer();
 
@@ -105,7 +110,7 @@ QWidget *CRover5Control::createGeneralTab()
 
     svbox->addWidget(headingStatW = new CNumStatWidget("Heading", 1));
     svbox->addWidget(new CNumStatWidget("Pitch", 1));
-    svbox->addWidget(new CNumStatWidget("Yaw", 1));
+    svbox->addWidget(new CNumStatWidget("Roll", 1));
 
 
     return ret;
@@ -134,7 +139,7 @@ QWidget *CRover5Control::createBottomTabWidget()
 
 QWidget *CRover5Control::createDriveTab()
 {
-    return new QWidget;
+    return new CDriveWidget;
 }
 
 QWidget *CRover5Control::createCamControlTab()
@@ -326,4 +331,22 @@ void CRover5Control::btMsgReceived(EMessage m, QByteArray data)
         servoPosStatW->set(0, data[0]);
     else if (m == MSG_HEADING)
         headingStatW->set(0, bytesToInt(data[0], data[1]));
+}
+
+void CRover5Control::btSendTest()
+{
+    CBTMessage msg(MSG_BATTERY);
+    msg << 'c';
+    btInterface->send(msg);
+}
+
+void CRover5Control::setDriveDirection(CDriveWidget::DriveFlags dir)
+{
+    const uint8_t speed = 70;
+    QByteArray data;
+
+    if (dir & CDriveWidget::DRIVE_FWD)
+    {
+//        btInterface->send(MSG_CMD_MOTORSPEED);
+    }
 }
