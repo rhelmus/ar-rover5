@@ -5,6 +5,7 @@
 #include <QKeyEvent>
 #include <QPushButton>
 #include <QStyle>
+#include <QTimer>
 
 CDriveWidget::CDriveWidget(QWidget *parent) :
     QWidget(parent)
@@ -29,6 +30,10 @@ CDriveWidget::CDriveWidget(QWidget *parent) :
     driveButtons[BUTTON_RIGHT] =
             createDriveButton(style()->standardIcon(QStyle::SP_ArrowRight));
     grid->addWidget(driveButtons[BUTTON_RIGHT], 1, 2);
+
+    updateTimer = new QTimer(this);
+    updateTimer->setInterval(200);
+    connect(updateTimer, SIGNAL(timeout()), SLOT(updateDriveDir()));
 }
 
 QPushButton *CDriveWidget::createDriveButton(const QIcon &icon)
@@ -66,7 +71,12 @@ void CDriveWidget::updateDriveDir()
     if (driveButtons[BUTTON_RIGHT]->isDown())
         dir |= DRIVE_RIGHT;
 
-    emit directionChanged(dir);
+    emit driveUpdate(dir);
+
+    qDebug() << "update drive:" << dir;
+
+    if (dir == DRIVE_NONE)
+        updateTimer->stop();
 }
 
 void CDriveWidget::keyPressEvent(QKeyEvent *event)
@@ -83,7 +93,13 @@ void CDriveWidget::keyPressEvent(QKeyEvent *event)
     else if (event->key() == Qt::Key_Right)
         driveButtons[BUTTON_RIGHT]->setDown(true);
     else
+    {
         QWidget::keyPressEvent(event);
+        return;
+    }
+
+    if (!updateTimer->isActive())
+        updateTimer->start();
 }
 
 void CDriveWidget::keyReleaseEvent(QKeyEvent *event)

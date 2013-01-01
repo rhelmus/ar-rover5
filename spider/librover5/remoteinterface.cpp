@@ -40,10 +40,27 @@ struct SMotorControl
         uint16_t distance;
         uint16_t angle;
     };
+
+    uint16_t duration;
 };
 
 volatile SMotorControl motorControl;
 
+
+void getPitchRollHeading(int16_t &p, int16_t &r, uint16_t &h)
+{
+    getCompass().read();
+
+    // From LSM303 application note
+    // NOTE: pitch&roll are switched
+    LSM303::vector vec = getCompass().a;
+    getCompass().vector_normalize(&vec);
+    const float fp = asin(-vec.x);
+    r = round(fp * 180.0 / M_PI);
+    p = round(asin(-vec.y / cos(fp)) * 180.0 / M_PI);
+
+    h = getCompass().heading();
+}
 
 void TWIStartMessage(EMessage m)
 {
@@ -84,6 +101,7 @@ void TWIReceiveCB(int bytes)
         motorControl.rightSpeed = Wire.read();
         motorControl.mdirLeft = static_cast<EMotorDirection>(Wire.read());
         motorControl.mdirRight = static_cast<EMotorDirection>(Wire.read());
+        motorControl.duration = bytesToInt(Wire.read(), Wire.read());
         motorControl.distance = 0;
         motorControl.turn = false;
     }
@@ -93,13 +111,15 @@ void TWIReceiveCB(int bytes)
         motorControl.driveSpeed = Wire.read();
         motorControl.distance = bytesToInt(Wire.read(), Wire.read());
         motorControl.driveDir = static_cast<EMotorDirection>(Wire.read());
+        motorControl.duration = 0;
         motorControl.turn = false;
     }
-    else if (msg == MSG_CMD_CONTINEOUSTURN)
+    else if (msg == MSG_CMD_TURN)
     {
         motorControl.update = true;
         motorControl.turnSpeed = Wire.read();
         motorControl.turnDir = static_cast<ETurnDirection>(Wire.read());
+        motorControl.duration = bytesToInt(Wire.read(), Wire.read());
         motorControl.turn = true;
         motorControl.angle = 0;
     }
@@ -109,6 +129,7 @@ void TWIReceiveCB(int bytes)
         motorControl.turnSpeed = Wire.read();
         motorControl.angle = bytesToInt(Wire.read(), Wire.read());
         motorControl.turnDir = static_cast<ETurnDirection>(Wire.read());
+        motorControl.duration = 0;
         motorControl.turn = true;
     }
     else if (msg == MSG_CMD_STOP)
@@ -161,7 +182,11 @@ void CRemoteInterface::update()
         if (motorControl.turn)
         {
             if (!motorControl.angle)
+            {
                 motors.turn(motorControl.turnSpeed, motorControl.turnDir);
+                if (motorControl.duration)
+                    motors.setDuration(motorControl.duration * 1000);
+            }
             else
                 motors.turnAngle(motorControl.turnSpeed, motorControl.angle,
                                  motorControl.turnDir);
@@ -176,6 +201,8 @@ void CRemoteInterface::update()
                 motors.setRightDirection(motorControl.mdirRight);
                 motors.setLeftSpeed(motorControl.leftSpeed);
                 motors.setRightSpeed(motorControl.rightSpeed);
+                if (motorControl.duration)
+                    motors.setDuration(motorControl.duration * 1000);
             }
             else
             {
@@ -239,9 +266,12 @@ void CRemoteInterface::update()
         Wire.endTransmission();
 
         // UNDONE
-        getCompass().read();
-        const int heading = getCompass().heading();
-        TWIStartMessage(MSG_HEADING);
+        int16_t pitch, roll;
+        uint16_t heading;
+        getPitchRollHeading(pitch, roll, heading);
+        TWIStartMessage(MSG_IMU);
+        TWISendInt(pitch);
+        TWISendInt(roll);
         TWISendInt(heading);
         Wire.endTransmission();
     }

@@ -125,6 +125,22 @@ CBTMessage::CBTMessage(EMessage m)
     data.push_back(static_cast<char>(m));
 }
 
+CBTMessage::CBTMessage()
+{
+    data.push_back(static_cast<char>(MSG_BT_STARTMARKER));
+    data.push_back(static_cast<char>(0)); // Message size (to be filled in)
+    data.push_back(static_cast<char>(MSG_NONE)); // to be filled in
+}
+
+CBTMessage &CBTMessage::operator <<(uint16_t i)
+{
+    uint8_t buf[2];
+    intToBytes(i, buf);
+    data.push_back(buf[0]);
+    data.push_back(buf[1]);
+    return *this;
+}
+
 CBTMessage::operator QByteArray()
 {
     data[1] = data.size() - 2; // Minus size and start marker

@@ -5,11 +5,8 @@
 
 enum EMessage
 {
-    // Phone messages
-    MSG_CAMFRAME = 0,
-
     // Spider to control messages
-    MSG_PING,
+    MSG_PING = 0,
     MSG_SHARPIR,
     MSG_MOTOR_TARGETPOWER,
     MSG_MOTOR_SETPOWER,
@@ -20,7 +17,7 @@ enum EMessage
     MSG_ENCODER_DISTANCE,
     MSG_SERVO,
     MSG_BATTERY,
-    MSG_HEADING,
+    MSG_IMU,
     MSG_REQBTDATAN,
     MSG_REQBTMSG,
 
@@ -28,9 +25,15 @@ enum EMessage
     MSG_PONG,
     MSG_CMD_MOTORSPEED,
     MSG_CMD_DRIVEDIST,
-    MSG_CMD_CONTINEOUSTURN,
+    MSG_CMD_TURN,
     MSG_CMD_TURNANGLE,
     MSG_CMD_STOP,
+
+    // Phone to control messages
+    MSG_CAMFRAME,
+
+    // Control to phone messages
+    MSG_SETZOOM,
 
     // Bluetooth specific
     MSG_BT_STARTMARKER,
@@ -40,7 +43,7 @@ enum EMessage
 
     // Range to pass through unchanged from spider to controller
     MSG_PASS_START = MSG_SHARPIR,
-    MSG_PASS_END = MSG_HEADING
+    MSG_PASS_END = MSG_IMU
 };
 
 enum
@@ -59,6 +62,9 @@ enum EMotor
     MOTOR_RF,
     MOTOR_END
 };
+
+enum EMotorDirection { DIR_FWD, DIR_BWD };
+enum ETurnDirection { DIR_LEFT, DIR_RIGHT };
 
 enum EEncoder { ENC_LB=0, ENC_LF, ENC_RB, ENC_RF, ENC_END };
 

@@ -24,9 +24,6 @@ volatile CRingBuffer<128> TWIPassBuffer;
 bool receivedBTStart, receivedBTMSGSize;
 uint8_t BTMsgSize, BTMsgBytesRead;
 CRingBuffer<BRIDGE_MAX_REQSIZE> tempBTMsgBuffer;
-// Room for max 8 messages, plus one byte for size of each
-volatile CRingBuffer<8 * (BRIDGE_MAX_REQSIZE + 1)> BTPassBuffer;
-volatile uint8_t BTMessagesReceived;
 
 USB usbDev;
 BTD bluetoothDev(&usbDev);
@@ -35,23 +32,12 @@ SPP serialBluetooth(&bluetoothDev);
 
 void TWIRequest(void)
 {
+    // UNDONE
     if (lastRecTWIMessage == MSG_PING)
     {
         uint8_t buf[4];
         longToBytes(132560, buf);
         Wire.write(buf, 4);
-    }
-    else if (lastRecTWIMessage == MSG_REQBTDATAN)
-        Wire.write(BTMessagesReceived);
-    else if (lastRecTWIMessage == MSG_REQBTMSG)
-    {
-        if (BTMessagesReceived > 0)
-        {
-            const uint8_t msgsize = BTPassBuffer.pop();
-            for (uint8_t i=0; i<msgsize; ++i)
-                Wire.write(BTPassBuffer.pop());
-            --BTMessagesReceived;
-        }
     }
 
     lastRecTWIMessage = MSG_NONE;
@@ -151,19 +137,12 @@ void loop()
                 else
                 {
                     // Msg got through OK?
-                    if ((b == MSG_BT_ENDMARKER) && !BTPassBuffer.isFull())
+                    if (b == MSG_BT_ENDMARKER)
                     {
                         Wire.beginTransmission(SPIDER_TWI_ADDRESS);
                         while (!tempBTMsgBuffer.isEmpty())
                             Wire.write(tempBTMsgBuffer.pop());
                         Wire.endTransmission();
-
-#if 0
-                        BTPassBuffer.push(BTMsgSize);
-                        while (!tempBTMsgBuffer.isEmpty())
-                            BTPassBuffer.push(tempBTMsgBuffer.pop());
-                        ++BTMessagesReceived;
-#endif
                     }
 
                     receivedBTStart = receivedBTMSGSize = false;

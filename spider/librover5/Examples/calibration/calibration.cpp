@@ -134,7 +134,7 @@ void loop()
 #endif
     if (running && /*((curtime - runtime) > 1000) && !encoders.getSpeed(ENC_LB) &&
         !encoders.getSpeed(ENC_LF) && !encoders.getSpeed(ENC_RB) &&
-        !encoders.getSpeed(ENC_RF)*/ motors.finishedMoving())
+        !encoders.getSpeed(ENC_RF)*/ motors.distanceReached())
     {
         Serial.println("Run finished!");
         Serial.print("left-back: "); Serial.println(encoders.getDist(ENC_LB), DEC);

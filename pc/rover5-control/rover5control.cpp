@@ -108,9 +108,7 @@ QWidget *CRover5Control::createGeneralTab()
     grid->addWidget(group, 1, 1);
     svbox = new QVBoxLayout(group);
 
-    svbox->addWidget(headingStatW = new CNumStatWidget("Heading", 1));
-    svbox->addWidget(new CNumStatWidget("Pitch", 1));
-    svbox->addWidget(new CNumStatWidget("Roll", 1));
+    svbox->addWidget(IMUStatW = new CNumStatWidget("pitch/roll/yaw", 3));
 
 
     return ret;
@@ -139,7 +137,10 @@ QWidget *CRover5Control::createBottomTabWidget()
 
 QWidget *CRover5Control::createDriveTab()
 {
-    return new CDriveWidget;
+    CDriveWidget *ret = new CDriveWidget;
+    connect(ret, SIGNAL(driveUpdate(CDriveWidget::DriveFlags)),
+            SLOT(driveUpdate(CDriveWidget::DriveFlags)));
+    return ret;
 }
 
 QWidget *CRover5Control::createCamControlTab()
@@ -298,13 +299,13 @@ void CRover5Control::btMsgReceived(EMessage m, QByteArray data)
     else if (m == MSG_ENCODER_SPEED)
     {
         for (int i=0; i<ENC_END; ++i)
-            motorSetPowerStatW->set(i, bytesToInt(data[i*2], data[i*2+1]));
+            motorSetSpeedStatW->set(i, bytesToInt(data[i*2], data[i*2+1]));
     }
     else if (m == MSG_ENCODER_DISTANCE)
     {
         for (int i=0; i<ENC_END; ++i)
         {
-            motorSetPowerStatW->set(i, bytesToLong(data[i*4], data[i*4+1], data[i*4+2],
+            motorSetDistStatW->set(i, bytesToLong(data[i*4], data[i*4+1], data[i*4+2],
                     data[i*4+3]));
         }
     }
@@ -329,24 +330,61 @@ void CRover5Control::btMsgReceived(EMessage m, QByteArray data)
         batteryStatW->set(0, bytesToInt(data[0], data[1]));
     else if (m == MSG_SERVO)
         servoPosStatW->set(0, data[0]);
-    else if (m == MSG_HEADING)
-        headingStatW->set(0, bytesToInt(data[0], data[1]));
+    else if (m == MSG_IMU)
+    {
+        IMUStatW->set(0, (int16_t)bytesToInt(data[0], data[1]));
+        IMUStatW->set(1, (int16_t)bytesToInt(data[2], data[3]));
+        IMUStatW->set(2, bytesToInt(data[4], data[5]));
+    }
 }
 
 void CRover5Control::btSendTest()
 {
     CBTMessage msg(MSG_BATTERY);
-    msg << 'c';
+    msg << (uint8_t)10;
     btInterface->send(msg);
 }
 
-void CRover5Control::setDriveDirection(CDriveWidget::DriveFlags dir)
+void CRover5Control::driveUpdate(CDriveWidget::DriveFlags dir)
 {
-    const uint8_t speed = 70;
-    QByteArray data;
+    const uint8_t drivespeed = 70; // UNDONE
 
-    if (dir & CDriveWidget::DRIVE_FWD)
+    if (dir == CDriveWidget::DRIVE_NONE)
     {
-//        btInterface->send(MSG_CMD_MOTORSPEED);
+        CBTMessage msg(MSG_CMD_STOP);
+        btInterface->send(msg);
+    }
+    else if (dir & (CDriveWidget::DRIVE_FWD | CDriveWidget::DRIVE_BWD))
+    {
+        uint8_t lspeed, rspeed;
+        const EMotorDirection mdir = (dir & CDriveWidget::DRIVE_FWD) ? DIR_FWD : DIR_BWD;
+
+        if (((mdir == DIR_FWD) && (dir & CDriveWidget::DRIVE_LEFT)) ||
+            ((mdir == DIR_BWD) && (dir & CDriveWidget::DRIVE_RIGHT)))
+        {
+            lspeed = 0;
+            rspeed = drivespeed;
+        }
+        else if (((mdir == DIR_FWD) && (dir & CDriveWidget::DRIVE_RIGHT)) ||
+                 ((mdir == DIR_BWD) && (dir & CDriveWidget::DRIVE_LEFT)))
+        {
+            lspeed = drivespeed;
+            rspeed = 0;
+        }
+        else // straight fwd/bwd
+            lspeed = rspeed = drivespeed;
+
+        CBTMessage msg(MSG_CMD_MOTORSPEED);
+        msg << lspeed << rspeed << (uint8_t)mdir << (uint8_t)mdir << (uint16_t)DRIVE_TIME;
+        btInterface->send(msg);
+    }
+    else // turn
+    {
+        const ETurnDirection tdir =
+                (dir & CDriveWidget::DRIVE_LEFT) ? DIR_LEFT : DIR_RIGHT;
+
+        CBTMessage msg(MSG_CMD_TURN);
+        msg << drivespeed << (uint8_t)tdir << (uint16_t)DRIVE_TIME;
+        btInterface->send(msg);
     }
 }

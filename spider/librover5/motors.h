@@ -6,9 +6,6 @@
 
 #include <stdint.h>
 
-enum EMotorDirection { DIR_FWD, DIR_BWD };
-enum ETurnDirection { DIR_LEFT, DIR_RIGHT };
-
 class CMotors
 {
     enum
@@ -32,11 +29,14 @@ class CMotors
 
     volatile SMotor motorData[MOTOR_END];
     volatile bool enabled, fixedTurning;
+    volatile uint32_t endTime;
 
+    void reset(void);
     void setEffMotorSpeed(EMotor m, uint8_t s);
     void setEffMotorDirection(EMotor m, EMotorDirection d);
 
 public:
+    CMotors(void) : enabled(false), fixedTurning(false), endTime(0) { }
     void init(void);
     void enable(void);
     void disable(void);
@@ -63,9 +63,10 @@ public:
     void turnDist(uint8_t s, uint32_t dist, ETurnDirection dir);
     void turnAngle(uint8_t s, uint16_t a, ETurnDirection d)
     { turnDist(s, a * ENC_PULSES_DEG, d); }
-    void stop(void) { setLeftSpeed(0); setRightSpeed(0); }
+    void setDuration(uint32_t t);
+    void stop(void);
     void directStop(void)
-    { setEffMotorSpeed(MOTOR_LB, 0); setEffMotorSpeed(MOTOR_LF, 0);
+    { stop(); setEffMotorSpeed(MOTOR_LB, 0); setEffMotorSpeed(MOTOR_LF, 0);
       setEffMotorSpeed(MOTOR_RB, 0); setEffMotorSpeed(MOTOR_RF, 0); }
 
     uint16_t getCurrent(EMotor m) const;
@@ -73,7 +74,7 @@ public:
     uint8_t getSetPower(EMotor m) const { return motorData[m].setPower; }
     uint16_t getTargetSpeed(EMotor m) const { return motorData[m].targetEncSpeed; }
     uint32_t getTargetDistance(EMotor m) const { return motorData[m].targetDistance; }
-    bool finishedMoving(void) const;
+    bool distanceReached(void) const;
 
     void update(void);
 };

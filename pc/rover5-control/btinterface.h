@@ -50,8 +50,11 @@ class CBTMessage
 
 public:
     CBTMessage(EMessage m);
+    CBTMessage(void);
 
+    void setMessage(EMessage m) { data[2] = static_cast<char>(m); }
     CBTMessage &operator <<(uint8_t b) { data.push_back(b); return *this; }
+    CBTMessage &operator <<(uint16_t i);
     operator QByteArray(void);
 };
 

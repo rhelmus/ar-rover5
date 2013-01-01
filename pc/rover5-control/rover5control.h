@@ -21,6 +21,8 @@ class CRover5Control : public QMainWindow
 {
     Q_OBJECT
 
+    enum { DRIVE_TIME = 1 };
+
     QLabel *smallCamWidget, *largeCamWidget;
     QPushButton *btConnectButton;
 
@@ -30,7 +32,7 @@ class CRover5Control : public QMainWindow
     CNumStatWidget *sharpIRLRStatW, *sharpIRLFRFStatW, *sharpIRFrontStatW;
     CNumStatWidget *sharpIRTurretStatW;
     CNumStatWidget *batteryStatW, *servoPosStatW, *pingStatW;
-    CNumStatWidget *headingStatW;
+    CNumStatWidget *IMUStatW;
 
     QTcpServer *tcpServer;
     QSignalMapper *tcpDisconnectMapper;
@@ -60,7 +62,7 @@ private slots:
     void btDisconnected(void);
     void btMsgReceived(EMessage m, QByteArray data);
     void btSendTest(void);
-    void setDriveDirection(CDriveWidget::DriveFlags dir);
+    void driveUpdate(CDriveWidget::DriveFlags dir);
     
 public:
     CRover5Control(QWidget *parent = 0);

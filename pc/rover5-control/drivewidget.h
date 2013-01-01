@@ -10,11 +10,11 @@ class CDriveWidget : public QWidget
 public:
     enum EDriveDirection
     {
-        DRIVE_NONE = (1<<0),
-        DRIVE_FWD = (1<<1),
-        DRIVE_BWD = (1<<2),
-        DRIVE_LEFT = (1<<3),
-        DRIVE_RIGHT = (1<<4)
+        DRIVE_NONE = 0,
+        DRIVE_FWD = (1<<0),
+        DRIVE_BWD = (1<<1),
+        DRIVE_LEFT = (1<<2),
+        DRIVE_RIGHT = (1<<3)
     };
     Q_DECLARE_FLAGS(DriveFlags, EDriveDirection)
 
@@ -24,9 +24,12 @@ private:
     enum { BUTTON_FWD=0, BUTTON_BWD, BUTTON_LEFT, BUTTON_RIGHT, BUTTON_END };
 
     QPushButton *driveButtons[BUTTON_END];
+    QTimer *updateTimer;
 
     QPushButton *createDriveButton(const QIcon &icon);
     bool canPressKey(int key) const;
+
+private slots:
     void updateDriveDir(void);
 
 protected:
@@ -37,7 +40,7 @@ public:
     explicit CDriveWidget(QWidget *parent = 0);
     
 signals:
-    void directionChanged(DriveFlags);
+    void driveUpdate(CDriveWidget::DriveFlags);
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(CDriveWidget::DriveFlags)

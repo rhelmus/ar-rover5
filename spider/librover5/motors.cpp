@@ -55,9 +55,6 @@ void CMotors::init()
 
     for (uint8_t m=0; m<MOTOR_END; ++m)
         setEffMotorDirection(static_cast<EMotor>(m), DIR_FWD);
-
-    enabled = false;
-    fixedTurning = false;
 }
 
 void CMotors::enable()
@@ -132,6 +129,21 @@ void CMotors::turnDist(uint8_t s, uint32_t dist, ETurnDirection dir)
     fixedTurning = true;
 }
 
+void CMotors::setDuration(uint32_t t)
+{
+    endTime = millis() + t;
+}
+
+void CMotors::stop()
+{
+    fixedTurning = false;
+    endTime = 0;
+    for (uint8_t i=0; i<MOTOR_END; ++i)
+        motorData[i].targetDistance = 0;
+    setLeftSpeed(0);
+    setRightSpeed(0);
+}
+
 uint16_t CMotors::getCurrent(EMotor m) const
 {
     switch (m)
@@ -143,7 +155,7 @@ uint16_t CMotors::getCurrent(EMotor m) const
     }
 }
 
-bool CMotors::finishedMoving() const
+bool CMotors::distanceReached() const
 {
     for (uint8_t m=0; m<MOTOR_END; ++m)
     {
@@ -159,7 +171,9 @@ void CMotors::update()
     if (!enabled)
         return;
 
-    if (!finishedMoving())
+    if ((endTime > 0) && (millis() >= endTime))
+        stop();
+    else if (!distanceReached())
     {
 #ifdef TRACKED_MOVEMENT
         // Assume front & back motors are/want the same
@@ -196,7 +210,7 @@ void CMotors::update()
                 setRightSpeed(max(motorData[MOTOR_RB].targetPower/2, MIN_POWER));
         }
 
-        if (finishedMoving())
+        if (distanceReached())
             fixedTurning = false;
 #else
 #error "No support for non tracked movement yet"
@@ -218,23 +232,6 @@ void CMotors::update()
         }
         else
         {
-#if 0
-            if (motorData[m].targetDistance)
-            {
-                const uint32_t dist = encoders.getDist(static_cast<EEncoder>(m));
-
-                if (dist >= (motorData[m].targetDistance - motorData[m].targetEncSpeed))
-                {
-                    motorData[m].targetPower = 0;
-                    motorData[m].targetEncSpeed = 0;
-                    motorData[m].targetDistance = 0;
-                }
-                else if (dist >= (motorData[m].targetDistance - (motorData[m].targetEncSpeed*3)))
-                    setMotorSpeed(static_cast<EMotor>(m),
-                                  max(motorData[m].targetPower/2, MIN_POWER));
-            }
-#endif
-
             if ((motorData[m].targetPower == motorData[m].setPower) &&
                 (motorData[m].targetEncSpeed > 0))
             {
@@ -245,13 +242,7 @@ void CMotors::update()
                 if (abs(diff) >= 4)
                     motorData[m].targetPower -= (diff / 4);
                 else if (diff != 0)
-                    motorData[m].targetPower += (diff < 0);
-
-                /*
-                if (diff > 0)
-                    --motorData[m].targetPower;
-                else if (diff < 0)
-                    ++motorData[m].targetPower;*/
+                    motorData[m].targetPower += ((diff < 0) ? 1 : -1);
 
                 motorData[m].targetPower = constrain(motorData[m].targetPower, MIN_POWER,
                                                      MAX_POWER);
@@ -267,13 +258,6 @@ void CMotors::update()
                 else
                     setEffMotorSpeed(static_cast<EMotor>(m),
                                      motorData[m].setPower + (diff / 2));
-/*                else if (diff > 0)
-                    setEffMotorSpeed(static_cast<EMotor>(m),
-                                     motorData[m].setPower - MOTOR_CHANGE_INTERVAL);
-                else
-                    setEffMotorSpeed(static_cast<EMotor>(m),
-                                     max(MIN_POWER,
-                                         motorData[m].setPower + MOTOR_CHANGE_INTERVAL));*/
             }
         }
     }
