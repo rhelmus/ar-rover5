@@ -1,3 +1,4 @@
+#include "../../shared/tcputils.h"
 #include "btinterface.h"
 #include "numstatwidget.h"
 #include "rover5control.h"
@@ -137,15 +138,33 @@ QWidget *CRover5Control::createBottomTabWidget()
 
 QWidget *CRover5Control::createDriveTab()
 {
-    CDriveWidget *ret = new CDriveWidget;
-    connect(ret, SIGNAL(driveUpdate(CDriveWidget::DriveFlags)),
+    QWidget *ret = new QWidget;
+    QHBoxLayout *hbox = new QHBoxLayout(ret);
+
+    CDriveWidget *dw = new CDriveWidget;
+    connect(dw, SIGNAL(driveUpdate(CDriveWidget::DriveFlags)),
             SLOT(driveUpdate(CDriveWidget::DriveFlags)));
+    hbox->addWidget(dw);
+
     return ret;
 }
 
 QWidget *CRover5Control::createCamControlTab()
 {
-    return new QWidget;
+    QWidget *ret = new QWidget;
+    QVBoxLayout *vbox = new QVBoxLayout(ret);
+
+    vbox->addWidget(camZoomSlider = new QSlider(Qt::Vertical));
+    camZoomSlider->setRange(10, 40);
+    camZoomSlider->setTickInterval(1);
+
+    zoomApplyTimer = new QTimer(this);
+    zoomApplyTimer->setInterval(500);
+    zoomApplyTimer->setSingleShot(true);
+    connect(zoomApplyTimer, SIGNAL(timeout()), SLOT(applyCamZoom()));
+    connect(camZoomSlider, SIGNAL(valueChanged(int)), zoomApplyTimer, SLOT(start()));
+
+    return ret;
 }
 
 QLabel *CRover5Control::createSmallCamWidget()
@@ -205,7 +224,7 @@ void CRover5Control::parseTcp(QDataStream &stream)
                                                                 Qt::SmoothTransformation)));
     }
 
-    qDebug() << QString("Received msg: %1 (%2 bytes)\n").arg(msg).arg(tcpReadBlockSize);
+//    qDebug() << QString("Received msg: %1 (%2 bytes)\n").arg(msg).arg(tcpReadBlockSize);
 }
 
 void CRover5Control::tcpClientConnected()
@@ -232,7 +251,7 @@ void CRover5Control::tcpClientDisconnected(QObject *obj)
 
 void CRover5Control::tcpClientHasData()
 {
-    qDebug() << "clientHasData: " << tcpClientSocket->bytesAvailable() << tcpReadBlockSize;
+//    qDebug() << "clientHasData: " << tcpClientSocket->bytesAvailable() << tcpReadBlockSize;
     QDataStream in(tcpClientSocket);
     in.setVersion(QDataStream::Qt_4_7);
 
@@ -240,7 +259,7 @@ void CRover5Control::tcpClientHasData()
     {
         if (tcpReadBlockSize == 0)
         {
-            if (tcpClientSocket->bytesAvailable() < (int)sizeof(quint32))
+            if (tcpClientSocket->bytesAvailable() < (int)sizeof(uint32_t))
                 return;
 
             in >> tcpReadBlockSize;
@@ -386,5 +405,16 @@ void CRover5Control::driveUpdate(CDriveWidget::DriveFlags dir)
         CBTMessage msg(MSG_CMD_TURN);
         msg << drivespeed << (uint8_t)tdir << (uint16_t)DRIVE_TIME;
         btInterface->send(msg);
+    }
+}
+
+void CRover5Control::applyCamZoom()
+{
+    if (canSendTcp())
+    {
+        CTcpMsgComposer tcpmsg(MSG_SETZOOM);
+        tcpmsg << static_cast<qreal>(camZoomSlider->value() / 10.0);
+        tcpClientSocket->write(tcpmsg);
+        qDebug() << "send zoom: " << static_cast<qreal>(camZoomSlider->value() / 10.0);
     }
 }

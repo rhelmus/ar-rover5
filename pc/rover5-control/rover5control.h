@@ -11,6 +11,7 @@
 class QLabel;
 class QPushButton;
 class QSignalMapper;
+class QSlider;
 class QTcpServer;
 class QTcpSocket;
 
@@ -33,6 +34,9 @@ class CRover5Control : public QMainWindow
     CNumStatWidget *sharpIRTurretStatW;
     CNumStatWidget *batteryStatW, *servoPosStatW, *pingStatW;
     CNumStatWidget *IMUStatW;
+
+    QSlider *camZoomSlider;
+    QTimer *zoomApplyTimer;
 
     QTcpServer *tcpServer;
     QSignalMapper *tcpDisconnectMapper;
@@ -63,6 +67,7 @@ private slots:
     void btMsgReceived(EMessage m, QByteArray data);
     void btSendTest(void);
     void driveUpdate(CDriveWidget::DriveFlags dir);
+    void applyCamZoom(void);
     
 public:
     CRover5Control(QWidget *parent = 0);

@@ -18,8 +18,6 @@ enum EMessage
     MSG_SERVO,
     MSG_BATTERY,
     MSG_IMU,
-    MSG_REQBTDATAN,
-    MSG_REQBTMSG,
 
     // Control to spider messages
     MSG_PONG,
