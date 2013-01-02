@@ -45,6 +45,10 @@ class CRover5Control : public QMainWindow
 
     CBTInterface *btInterface;
 
+    QWidget *createStatusWidgets(void);
+    QWidget *createCameraWidgets(void);
+    QWidget *createDriveWidgets(void);
+
     QWidget *createTopTabWidget(void);
     QWidget *createGeneralTab(void);
     QWidget *createCamViewTab(void);

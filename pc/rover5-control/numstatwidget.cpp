@@ -10,12 +10,14 @@ CNumStatWidget::CNumStatWidget(const QString &l, int cols, QWidget *parent) :
 
     QHBoxLayout *hbox = new QHBoxLayout(this);
 
-    hbox->addWidget(new QLabel(l));
+    QLabel *label = new QLabel(l);
+//    label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    hbox->addWidget(label/*, 0, Qt::AlignLeft*/);
 
-    QWidget *vw = new QWidget;
+    /*QWidget *vw = new QWidget;
     vw->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     hbox->addWidget(vw, 0, Qt::AlignRight);
-    QHBoxLayout *shbox = new QHBoxLayout(vw);
+    QHBoxLayout *shbox = new QHBoxLayout(vw);*/
 
     for (int c=0; c<cols; ++c)
     {
@@ -24,6 +26,10 @@ CNumStatWidget::CNumStatWidget(const QString &l, int cols, QWidget *parent) :
         vl->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         vl->setMinimumWidth(50);
 
+        QFont font(vl->font());
+        font.setPointSize(8);
+        vl->setFont(font);
+
         QPalette pal = vl->palette();
         pal.setColor(foregroundRole(), Qt::yellow);
         pal.setColor(backgroundRole(), Qt::blue);
@@ -31,7 +37,7 @@ CNumStatWidget::CNumStatWidget(const QString &l, int cols, QWidget *parent) :
         vl->setAutoFillBackground(true);
 
         statWidgetList << vl;
-        shbox->addWidget(vl);
+        hbox->addWidget(vl);
     }
 }
 
