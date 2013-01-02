@@ -124,8 +124,16 @@ void CCamClient::serverHasData()
 
 void CCamClient::parseTcp(QDataStream &stream)
 {
-    QString msg;
-    stream >> msg;
+    uint8_t tmp;
+    stream >> tmp;
 
+    const EMessage msg = static_cast<EMessage>(tmp);
+
+    if (msg == MSG_SETZOOM)
+    {
+        qreal z;
+        stream >> z;
+        camera->focus()->zoomTo(1.0, z);
+    }
 //    QMessageBox::information(this, "heuh", QString("Received msg: %1 (%2 bytes)\n").arg(msg).arg(tcpReadBlockSize));
 }
