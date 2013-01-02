@@ -1,14 +1,124 @@
 #include "drivewidget.h"
+#include "utils.h"
 
+#include <QComboBox>
 #include <QDebug>
 #include <QGridLayout>
 #include <QKeyEvent>
+#include <QLabel>
 #include <QPushButton>
+#include <QSpinBox>
 #include <QStyle>
 #include <QTimer>
 
-CDriveWidget::CDriveWidget(QWidget *parent) :
-    QWidget(parent)
+
+CDriveWidget::CDriveWidget(QWidget *parent) : QWidget(parent)
+{
+    setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    setFocusPolicy(Qt::StrongFocus);
+
+    QHBoxLayout *hbox = new QHBoxLayout(this);
+
+    hbox->addWidget(createKeypad());
+    hbox->addWidget(createContinuousDriveWidget());
+    hbox->addWidget(createSpeedWidget());
+}
+
+QWidget *CDriveWidget::createKeypad()
+{
+    QFrame *ret = new QFrame;
+    ret->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
+    QVBoxLayout *vbox = new QVBoxLayout(ret);
+
+    CDriveKeypad *keypad = new CDriveKeypad;
+    vbox->addWidget(keypad);
+    connect(keypad, SIGNAL(driveUpdate(CDriveWidget::DriveFlags)),
+            SLOT(sendDriveUpdate(CDriveWidget::DriveFlags)));
+
+    return ret;
+}
+
+QWidget *CDriveWidget::createContinuousDriveWidget()
+{
+    QFrame *ret = new QFrame;
+    ret->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
+    QHBoxLayout *hbox = new QHBoxLayout(ret);
+
+    QComboBox *combo = new QComboBox;
+    combo->addItems(QStringList() << "Drive FWD" << "Drive BWD" <<
+                                     "Turn left" << "Turn right");
+    connect(combo, SIGNAL(currentIndexChanged(int)), SLOT(updateContDriveMode(int)));
+    hbox->addWidget(combo);
+
+    hbox->addWidget(contDriveSpinBox = new QSpinBox);
+
+    hbox->addWidget(contDriveDurationCombo = new QComboBox);
+    contDriveDurationCombo->addItems(QStringList() << "Continuously" <<
+                                     "centimeter" << "seconds");
+    connect(contDriveDurationCombo, SIGNAL(currentIndexChanged(int)),
+            SLOT(updateContDriveDuration(int)));
+
+    QPushButton *button = new QPushButton("Go!");
+    connect(button, SIGNAL(clicked()), SLOT(sendContDrive()));
+    hbox->addWidget(button);
+
+    // Apply initial settings
+    updateContDriveMode(combo->currentIndex());
+    updateContDriveDuration(contDriveDurationCombo->currentIndex());
+
+    return ret;
+}
+
+QWidget *CDriveWidget::createSpeedWidget()
+{
+    QWidget *ret = new QWidget;
+    QVBoxLayout *vbox = new QVBoxLayout(ret);
+
+    QLabel *label = new QLabel("Speed");
+    label->setAlignment(Qt::AlignCenter);
+    vbox->addWidget(label);
+
+    QSlider *slider = new QSlider(Qt::Vertical);
+    slider->setRange(MIN_POWER, MAX_POWER);
+    vbox->addWidget(slider, 0, Qt::AlignHCenter);
+
+    vbox->addWidget(motorPowerSpinBox = new QSpinBox);
+    motorPowerSpinBox->setRange(MIN_POWER, MAX_POWER);
+
+    connect(slider, SIGNAL(valueChanged(int)), motorPowerSpinBox, SLOT(setValue(int)));
+    connect(motorPowerSpinBox, SIGNAL(valueChanged(int)), slider, SLOT(setValue(int)));
+
+    return ret;
+}
+
+void CDriveWidget::sendDriveUpdate(CDriveWidget::DriveFlags df)
+{
+    emit driveUpdate(df, motorPowerSpinBox->value());
+}
+
+void CDriveWidget::updateContDriveMode(int index)
+{
+    if (index < 2)
+    {
+        contDriveDurationCombo->setItemText(1, "centimeters");
+        contDriveSpinBox->setMaximum(10000);
+        contDriveSpinBox->setWrapping(false);
+    }
+    else
+    {
+        contDriveDurationCombo->setItemText(1, "degrees");
+        contDriveSpinBox->setMaximum(359);
+        contDriveSpinBox->setWrapping(true);
+    }
+}
+
+void CDriveWidget::updateContDriveDuration(int index)
+{
+    contDriveSpinBox->setEnabled(index != 0);
+}
+
+
+CDriveKeypad::CDriveKeypad(QWidget *parent) : QWidget(parent)
 {
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     setFocusPolicy(Qt::StrongFocus);
@@ -31,12 +141,16 @@ CDriveWidget::CDriveWidget(QWidget *parent) :
             createDriveButton(style()->standardIcon(QStyle::SP_ArrowRight));
     grid->addWidget(driveButtons[BUTTON_RIGHT], 1, 2);
 
+    // Make sure buttons don't steal (keyboard) focus
+    for (int i=0; i<BUTTON_END; ++i)
+        driveButtons[i]->setFocusPolicy(Qt::NoFocus);
+
     updateTimer = new QTimer(this);
     updateTimer->setInterval(200);
     connect(updateTimer, SIGNAL(timeout()), SLOT(updateDriveDir()));
 }
 
-QPushButton *CDriveWidget::createDriveButton(const QIcon &icon)
+QPushButton *CDriveKeypad::createDriveButton(const QIcon &icon)
 {
     QPushButton *ret = new QPushButton;
     ret->setIcon(icon);
@@ -44,7 +158,7 @@ QPushButton *CDriveWidget::createDriveButton(const QIcon &icon)
     return ret;
 }
 
-bool CDriveWidget::canPressKey(int key) const
+bool CDriveKeypad::canPressKey(int key) const
 {
     if ((key == Qt::Key_Up) && (driveButtons[BUTTON_BWD]->isDown()))
         return false;
@@ -58,28 +172,28 @@ bool CDriveWidget::canPressKey(int key) const
     return true;
 }
 
-void CDriveWidget::updateDriveDir()
+void CDriveKeypad::updateDriveDir()
 {
-    DriveFlags dir = DRIVE_NONE;
+    CDriveWidget::DriveFlags dir =CDriveWidget:: DRIVE_NONE;
 
     if (driveButtons[BUTTON_FWD]->isDown())
-        dir |= DRIVE_FWD;
+        dir |= CDriveWidget::DRIVE_FWD;
     if (driveButtons[BUTTON_BWD]->isDown())
-        dir |= DRIVE_BWD;
+        dir |= CDriveWidget::DRIVE_BWD;
     if (driveButtons[BUTTON_LEFT]->isDown())
-        dir |= DRIVE_LEFT;
+        dir |= CDriveWidget::DRIVE_LEFT;
     if (driveButtons[BUTTON_RIGHT]->isDown())
-        dir |= DRIVE_RIGHT;
+        dir |= CDriveWidget::DRIVE_RIGHT;
 
     emit driveUpdate(dir);
 
     qDebug() << "update drive:" << dir;
 
-    if (dir == DRIVE_NONE)
+    if (dir == CDriveWidget::DRIVE_NONE)
         updateTimer->stop();
 }
 
-void CDriveWidget::keyPressEvent(QKeyEvent *event)
+void CDriveKeypad::keyPressEvent(QKeyEvent *event)
 {
     if (!canPressKey(event->key()))
         return;
@@ -102,7 +216,7 @@ void CDriveWidget::keyPressEvent(QKeyEvent *event)
         updateTimer->start();
 }
 
-void CDriveWidget::keyReleaseEvent(QKeyEvent *event)
+void CDriveKeypad::keyReleaseEvent(QKeyEvent *event)
 {
     if (event->key() == Qt::Key_Up)
         driveButtons[BUTTON_FWD]->setDown(false);

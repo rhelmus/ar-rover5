@@ -27,13 +27,12 @@ class CRover5Control : public QMainWindow
     QLabel *smallCamWidget, *largeCamWidget;
     QPushButton *btConnectButton;
 
-    CNumStatWidget *motorTargetPowerStatW, *motorTargetSpeedStatW, *motorTargetDistStatW;
-    CNumStatWidget *motorSetPowerStatW, *motorSetSpeedStatW, *motorSetDistStatW;
-    CNumStatWidget *motorCurrentStatW;
+    CNumStatWidget *motorPowerStatW[MOTOR_END], *motorSpeedStatW[MOTOR_END];
+    CNumStatWidget *motorDistStatW[MOTOR_END], *motorCurrentStatW[MOTOR_END];
     CNumStatWidget *sharpIRLRStatW, *sharpIRLFRFStatW, *sharpIRFrontStatW;
     CNumStatWidget *sharpIRTurretStatW;
+    CNumStatWidget *pitchStatW, *rollStatW, *headingStatW;
     CNumStatWidget *batteryStatW, *servoPosStatW, *pingStatW;
-    CNumStatWidget *IMUStatW;
 
     QSlider *camZoomSlider;
     QTimer *zoomApplyTimer;
@@ -55,7 +54,6 @@ class CRover5Control : public QMainWindow
     QWidget *createBottomTabWidget(void);
     QWidget *createDriveTab(void);
     QWidget *createCamControlTab(void);
-    QLabel *createSmallCamWidget(void);
 
     void initTcpServer(void);
     bool canSendTcp(void) const;
@@ -70,7 +68,7 @@ private slots:
     void btDisconnected(void);
     void btMsgReceived(EMessage m, QByteArray data);
     void btSendTest(void);
-    void driveUpdate(CDriveWidget::DriveFlags dir);
+    void driveUpdate(CDriveWidget::DriveFlags dir, int drivespeed);
     void applyCamZoom(void);
     
 public:

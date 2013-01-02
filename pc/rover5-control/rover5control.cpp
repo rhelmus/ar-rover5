@@ -8,28 +8,6 @@
 #include <QTcpServer>
 #include <QTcpSocket>
 
-namespace {
-
-QFrame *createFrameGroupWidget(const QString &title)
-{
-    QFrame *ret = new QFrame;
-    ret->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
-    ret->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-
-    QVBoxLayout *vbox = new QVBoxLayout(ret);
-    vbox->setSpacing(0);
-    vbox->setSpacing(0);
-
-    QLabel *label = new QLabel(title);
-    label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    label->setAlignment(Qt::AlignCenter);
-    vbox->addWidget(label, 0, Qt::AlignTop);
-
-    return ret;
-}
-
-}
-
 CRover5Control::CRover5Control(QWidget *parent)
     : QMainWindow(parent), tcpClientSocket(0), tcpReadBlockSize(0)
 {
@@ -62,6 +40,9 @@ CRover5Control::CRover5Control(QWidget *parent)
     grid->addWidget(createCameraWidgets(), 0, 1);
     grid->addWidget(createDriveWidgets(), 1, 1);
 
+    /*grid->addWidget(btConnectButton = new QPushButton("BT connect"), 2, 0);
+    connect(btConnectButton, SIGNAL(clicked()), SLOT(toggleBtConnection()));*/
+
     initTcpServer();
 
     btInterface = new CBTInterface(this);
@@ -89,30 +70,32 @@ QWidget *CRover5Control::createStatusWidgets()
     vbox->setSpacing(0);
     ret->addTab(w, "Motors");
 
-    QFrame *fgroup = createFrameGroupWidget("Power");
-    vbox->addWidget(fgroup);
-    fgroup->layout()->addWidget(motorTargetPowerStatW = new CNumStatWidget("Left FWD", 2));
-    fgroup->layout()->addWidget(motorTargetSpeedStatW = new CNumStatWidget("Left BWD", 2));
-    fgroup->layout()->addWidget(motorTargetDistStatW = new CNumStatWidget("Right FWD", 2));
-    fgroup->layout()->addWidget(motorTargetDistStatW = new CNumStatWidget("Right BWD", 2));
+    QFrame *fgroup = createFrameGroupWidget("Power", true);
+    vbox->addWidget(fgroup, 0, Qt::AlignTop);
+    fgroup->layout()->addWidget(motorPowerStatW[MOTOR_LF] = new CNumStatWidget("Left FWD", 2));
+    fgroup->layout()->addWidget(motorPowerStatW[MOTOR_LB] = new CNumStatWidget("Left BWD", 2));
+    fgroup->layout()->addWidget(motorPowerStatW[MOTOR_RF] = new CNumStatWidget("Right FWD", 2));
+    fgroup->layout()->addWidget(motorPowerStatW[MOTOR_RB] = new CNumStatWidget("Right BWD", 2));
 
-    vbox->addWidget(fgroup = createFrameGroupWidget("Speed"));
-    fgroup->layout()->addWidget(motorTargetPowerStatW = new CNumStatWidget("Left FWD", 2));
-    fgroup->layout()->addWidget(motorTargetSpeedStatW = new CNumStatWidget("Left BWD", 2));
-    fgroup->layout()->addWidget(motorTargetDistStatW = new CNumStatWidget("Right FWD", 2));
-    fgroup->layout()->addWidget(motorTargetDistStatW = new CNumStatWidget("Right BWD", 2));
+    vbox->addWidget(fgroup = createFrameGroupWidget("Speed", true), 0, Qt::AlignTop);
+    fgroup->layout()->addWidget(motorSpeedStatW[MOTOR_LF] = new CNumStatWidget("Left FWD", 2));
+    fgroup->layout()->addWidget(motorSpeedStatW[MOTOR_LB] = new CNumStatWidget("Left BWD", 2));
+    fgroup->layout()->addWidget(motorSpeedStatW[MOTOR_RF] = new CNumStatWidget("Right FWD", 2));
+    fgroup->layout()->addWidget(motorSpeedStatW[MOTOR_RB] = new CNumStatWidget("Right BWD", 2));
 
-    vbox->addWidget(fgroup = createFrameGroupWidget("Distance"));
-    fgroup->layout()->addWidget(motorTargetPowerStatW = new CNumStatWidget("Left FWD", 2));
-    fgroup->layout()->addWidget(motorTargetSpeedStatW = new CNumStatWidget("Left BWD", 2));
-    fgroup->layout()->addWidget(motorTargetDistStatW = new CNumStatWidget("Right FWD", 2));
-    fgroup->layout()->addWidget(motorTargetDistStatW = new CNumStatWidget("Right BWD", 2));
+    vbox->addWidget(fgroup = createFrameGroupWidget("Distance", true), 0, Qt::AlignTop);
+    fgroup->layout()->addWidget(motorDistStatW[MOTOR_LF] = new CNumStatWidget("Left FWD", 2));
+    fgroup->layout()->addWidget(motorDistStatW[MOTOR_LB] = new CNumStatWidget("Left BWD", 2));
+    fgroup->layout()->addWidget(motorDistStatW[MOTOR_RF] = new CNumStatWidget("Right FWD", 2));
+    fgroup->layout()->addWidget(motorDistStatW[MOTOR_RB] = new CNumStatWidget("Right BWD", 2));
 
-    vbox->addWidget(fgroup = createFrameGroupWidget("Current"));
-    fgroup->layout()->addWidget(motorTargetPowerStatW = new CNumStatWidget("Left FWD", 2));
-    fgroup->layout()->addWidget(motorTargetSpeedStatW = new CNumStatWidget("Left BWD", 2));
-    fgroup->layout()->addWidget(motorTargetDistStatW = new CNumStatWidget("Right FWD", 2));
-    fgroup->layout()->addWidget(motorTargetDistStatW = new CNumStatWidget("Right BWD", 2));
+    vbox->addWidget(fgroup = createFrameGroupWidget("Current", true), 0, Qt::AlignTop);
+    fgroup->layout()->addWidget(motorCurrentStatW[MOTOR_LF] = new CNumStatWidget("Left FWD", 1));
+    fgroup->layout()->addWidget(motorCurrentStatW[MOTOR_LB] = new CNumStatWidget("Left BWD", 1));
+    fgroup->layout()->addWidget(motorCurrentStatW[MOTOR_RF] = new CNumStatWidget("Right FWD", 1));
+    fgroup->layout()->addWidget(motorCurrentStatW[MOTOR_RB] = new CNumStatWidget("Right BWD", 1));
+
+    vbox->addStretch();
 
 
     ret->addTab(w = new QWidget, "Others");
@@ -120,49 +103,23 @@ QWidget *CRover5Control::createStatusWidgets()
     vbox->setSpacing(0);
     vbox->setMargin(0);
 
-    vbox->addWidget(fgroup = createFrameGroupWidget("Sharp IR"), 0, Qt::AlignTop);
+    vbox->addWidget(fgroup = createFrameGroupWidget("Sharp IR", true), 0, Qt::AlignTop);
     fgroup->layout()->addWidget(sharpIRLRStatW = new CNumStatWidget("L / R", 2));
     fgroup->layout()->addWidget(sharpIRLFRFStatW = new CNumStatWidget("LF / RF", 2));
     fgroup->layout()->addWidget(sharpIRFrontStatW = new CNumStatWidget("Front", 1));
     fgroup->layout()->addWidget(sharpIRTurretStatW = new CNumStatWidget("Turret", 1));
 
-    vbox->addWidget(fgroup = createFrameGroupWidget("IMU"), 0, Qt::AlignTop);
-    fgroup->layout()->addWidget(sharpIRLRStatW = new CNumStatWidget("Pitch", 1));
-    fgroup->layout()->addWidget(sharpIRLFRFStatW = new CNumStatWidget("Roll", 1));
-    fgroup->layout()->addWidget(sharpIRFrontStatW = new CNumStatWidget("Heading", 1));
+    vbox->addWidget(fgroup = createFrameGroupWidget("IMU", true), 0, Qt::AlignTop);
+    fgroup->layout()->addWidget(pitchStatW = new CNumStatWidget("Pitch", 1));
+    fgroup->layout()->addWidget(rollStatW = new CNumStatWidget("Roll", 1));
+    fgroup->layout()->addWidget(headingStatW = new CNumStatWidget("Heading", 1));
 
-    vbox->addWidget(fgroup = createFrameGroupWidget("Misc."), 0, Qt::AlignTop);
+    vbox->addWidget(fgroup = createFrameGroupWidget("Misc.", true), 0, Qt::AlignTop);
     fgroup->layout()->addWidget(batteryStatW = new CNumStatWidget("Battery", 1));
     fgroup->layout()->addWidget(servoPosStatW = new CNumStatWidget("Servo pos", 1));
     fgroup->layout()->addWidget(pingStatW = new CNumStatWidget("Ping", 1));
 
     vbox->addStretch();
-
-#if 0
-    QFrame *fgroup = createFrameGroupWidget("Motors - set");
-    vbox->addWidget(fgroup);
-    fgroup->layout()->addWidget(motorTargetPowerStatW = new CNumStatWidget("Power", 4));
-    fgroup->layout()->addWidget(motorTargetSpeedStatW = new CNumStatWidget("Speed", 4));
-    fgroup->layout()->addWidget(motorTargetDistStatW = new CNumStatWidget("Dist", 4));
-
-    vbox->addWidget(fgroup = createFrameGroupWidget("Motors - target"));
-    fgroup->layout()->addWidget(motorSetPowerStatW = new CNumStatWidget("Power", 4));
-    fgroup->layout()->addWidget(motorSetSpeedStatW = new CNumStatWidget("Speed", 4));
-    fgroup->layout()->addWidget(motorSetDistStatW = new CNumStatWidget("Dist", 4));
-    fgroup->layout()->addWidget(motorCurrentStatW = new CNumStatWidget("Current", 4));
-
-    vbox->addWidget(fgroup = createFrameGroupWidget("Sharp IR"));
-    fgroup->layout()->addWidget(sharpIRLRStatW = new CNumStatWidget("L / R", 2));
-    fgroup->layout()->addWidget(sharpIRLFRFStatW = new CNumStatWidget("LF / RF", 2));
-    fgroup->layout()->addWidget(sharpIRFrontStatW = new CNumStatWidget("Front", 1));
-    fgroup->layout()->addWidget(sharpIRTurretStatW = new CNumStatWidget("Turret", 1));
-
-    vbox->addWidget(fgroup = createFrameGroupWidget("Misc."));
-    fgroup->layout()->addWidget(batteryStatW = new CNumStatWidget("Battery", 1));
-    fgroup->layout()->addWidget(servoPosStatW = new CNumStatWidget("Servo pos", 1));
-    fgroup->layout()->addWidget(pingStatW = new CNumStatWidget("Ping", 1));
-    fgroup->layout()->addWidget(IMUStatW = new CNumStatWidget("pitch/roll/yaw", 3));
-#endif
 
     return ret;
 }
@@ -172,8 +129,8 @@ QWidget *CRover5Control::createCameraWidgets()
     QWidget *ret = createFrameGroupWidget("Camera");
 
     ret->layout()->addWidget(largeCamWidget = new QLabel("Cam widget"));
-    largeCamWidget->setMinimumWidth(360);
-    largeCamWidget->setMinimumHeight(480);
+    largeCamWidget->setMinimumWidth(260);
+    largeCamWidget->setMinimumHeight(320);
 
     ret->layout()->addWidget(camZoomSlider = new QSlider(Qt::Horizontal));
     camZoomSlider->setRange(10, 40);
@@ -192,15 +149,21 @@ QWidget *CRover5Control::createDriveWidgets()
 {
     QWidget *ret = createFrameGroupWidget("Drive");
 
+    QWidget *w = new QWidget;
+    w->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
+    ret->layout()->addWidget(w);
+    QGridLayout *grid = new QGridLayout(w);
+
     CDriveWidget *dw = new CDriveWidget;
-    connect(dw, SIGNAL(driveUpdate(CDriveWidget::DriveFlags)),
-            SLOT(driveUpdate(CDriveWidget::DriveFlags)));
-    ret->layout()->addWidget(dw);
+    connect(dw, SIGNAL(driveUpdate(CDriveWidget::DriveFlags, int)),
+            SLOT(driveUpdate(CDriveWidget::DriveFlags, int)));
+    grid->addWidget(dw, 0, 0);
 
     return ret;
 
 }
 
+#if 0
 QWidget *CRover5Control::createTopTabWidget()
 {
     QTabWidget *ret = new QTabWidget;
@@ -321,16 +284,7 @@ QWidget *CRover5Control::createCamControlTab()
 
     return ret;
 }
-
-QLabel *CRover5Control::createSmallCamWidget()
-{
-    QLabel *ret = new QLabel("Cam widget");
-    ret->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    ret->setMinimumWidth(200);
-    ret->setMinimumHeight(150);
-    return ret;
-}
-
+#endif
 void CRover5Control::initTcpServer()
 {
     tcpServer = new QTcpServer(this);
@@ -370,13 +324,9 @@ void CRover5Control::parseTcp(QDataStream &stream)
         QImage img = QImage::fromData(data, "jpg");
         QMatrix m;
         m.rotate(270);
-        img = img.transformed(m);
-        smallCamWidget->setPixmap(QPixmap::fromImage(img.scaled(smallCamWidget->size(),
-                                                                Qt::IgnoreAspectRatio,
-                                                                Qt::SmoothTransformation)));
-        largeCamWidget->setPixmap(QPixmap::fromImage(img.scaled(largeCamWidget->size(),
-                                                                Qt::IgnoreAspectRatio,
-                                                                Qt::SmoothTransformation)));
+        largeCamWidget->setPixmap(QPixmap::fromImage(img.transformed(m).scaled(largeCamWidget->size(),
+                                                                               Qt::IgnoreAspectRatio,
+                                                                               Qt::SmoothTransformation)));
     }
 
 //    qDebug() << QString("Received msg: %1 (%2 bytes)\n").arg(msg).arg(tcpReadBlockSize);
@@ -453,40 +403,43 @@ void CRover5Control::btMsgReceived(EMessage m, QByteArray data)
     if (m == MSG_MOTOR_TARGETPOWER)
     {
         for (int i=0; i<MOTOR_END; ++i)
-            motorTargetPowerStatW->set(i, data[i]);
+            motorPowerStatW[i]->set(0, data[i]);
     }
     else if (m == MSG_MOTOR_TARGETSPEED)
     {
         for (int i=0; i<MOTOR_END; ++i)
-            motorTargetSpeedStatW->set(i, bytesToInt(data[i*2], data[i*2+1]));
+            motorSpeedStatW[i]->set(0, bytesToInt(data[i*2], data[i*2+1]));
     }
     else if (m == MSG_MOTOR_TARGETDIST)
     {
         for (int i=0; i<MOTOR_END; ++i)
-            motorTargetDistStatW->set(i, bytesToInt(data[i*2], data[i*2+1]));
+        {
+            motorDistStatW[i]->set(0, bytesToLong(data[i*4], data[i*4+1], data[i*4+2],
+                                   data[i*4+3]));
+        }
     }
     else if (m == MSG_MOTOR_SETPOWER)
     {
         for (int i=0; i<MOTOR_END; ++i)
-            motorSetPowerStatW->set(i, data[i]);
+            motorPowerStatW[i]->set(1, data[i]);
     }
     else if (m == MSG_ENCODER_SPEED)
     {
         for (int i=0; i<ENC_END; ++i)
-            motorSetSpeedStatW->set(i, bytesToInt(data[i*2], data[i*2+1]));
+            motorSpeedStatW[i]->set(1, bytesToInt(data[i*2], data[i*2+1]));
     }
     else if (m == MSG_ENCODER_DISTANCE)
     {
         for (int i=0; i<ENC_END; ++i)
         {
-            motorSetDistStatW->set(i, bytesToLong(data[i*4], data[i*4+1], data[i*4+2],
-                    data[i*4+3]));
+            motorDistStatW[i]->set(1, bytesToLong(data[i*4], data[i*4+1], data[i*4+2],
+                                   data[i*4+3]));
         }
     }
     else if (m == MSG_MOTOR_CURRENT)
     {
         for (int i=0; i<MOTOR_END; ++i)
-            motorCurrentStatW->set(i, bytesToInt(data[i*2], data[i*2+1]));
+            motorCurrentStatW[i]->set(0, bytesToInt(data[i*2], data[i*2+1]));
     }
     else if (m == MSG_SHARPIR)
     {
@@ -506,9 +459,9 @@ void CRover5Control::btMsgReceived(EMessage m, QByteArray data)
         servoPosStatW->set(0, data[0]);
     else if (m == MSG_IMU)
     {
-        IMUStatW->set(0, (int16_t)bytesToInt(data[0], data[1]));
-        IMUStatW->set(1, (int16_t)bytesToInt(data[2], data[3]));
-        IMUStatW->set(2, bytesToInt(data[4], data[5]));
+        pitchStatW->set(0, (int16_t)bytesToInt(data[0], data[1]));
+        rollStatW->set(0, (int16_t)bytesToInt(data[2], data[3]));
+        headingStatW->set(0, bytesToInt(data[4], data[5]));
     }
 }
 
@@ -519,10 +472,8 @@ void CRover5Control::btSendTest()
     btInterface->send(msg);
 }
 
-void CRover5Control::driveUpdate(CDriveWidget::DriveFlags dir)
+void CRover5Control::driveUpdate(CDriveWidget::DriveFlags dir, int drivespeed)
 {
-    const uint8_t drivespeed = 70; // UNDONE
-
     if (dir == CDriveWidget::DRIVE_NONE)
     {
         CBTMessage msg(MSG_CMD_STOP);
@@ -558,7 +509,7 @@ void CRover5Control::driveUpdate(CDriveWidget::DriveFlags dir)
                 (dir & CDriveWidget::DRIVE_LEFT) ? DIR_LEFT : DIR_RIGHT;
 
         CBTMessage msg(MSG_CMD_TURN);
-        msg << drivespeed << (uint8_t)tdir << (uint16_t)DRIVE_TIME;
+        msg << (uint8_t)drivespeed << (uint8_t)tdir << (uint16_t)DRIVE_TIME;
         btInterface->send(msg);
     }
 }

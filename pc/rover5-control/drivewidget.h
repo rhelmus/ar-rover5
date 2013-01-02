@@ -3,7 +3,9 @@
 
 #include <QWidget>
 
+class QComboBox;
 class QPushButton;
+class QSpinBox;
 
 class CDriveWidget : public QWidget
 {
@@ -19,6 +21,35 @@ public:
     Q_DECLARE_FLAGS(DriveFlags, EDriveDirection)
 
 private:
+    Q_OBJECT
+
+    enum { MIN_POWER = 50, MAX_POWER = 160 };
+
+    QComboBox *contDriveDurationCombo;
+    QSpinBox *contDriveSpinBox;
+    QSpinBox *motorPowerSpinBox;
+
+    QWidget *createKeypad(void);
+    QWidget *createContinuousDriveWidget(void);
+    QWidget *createSpeedWidget(void);
+
+private slots:
+    void sendDriveUpdate(CDriveWidget::DriveFlags df);
+    void updateContDriveMode(int index);
+    void updateContDriveDuration(int index);
+    void sendContDrive(void) { }
+
+protected:
+
+public:
+    explicit CDriveWidget(QWidget *parent = 0);
+
+signals:
+    void driveUpdate(CDriveWidget::DriveFlags, int);
+};
+
+class CDriveKeypad : public QWidget
+{
     Q_OBJECT
 
     enum { BUTTON_FWD=0, BUTTON_BWD, BUTTON_LEFT, BUTTON_RIGHT, BUTTON_END };
@@ -37,7 +68,7 @@ protected:
     virtual void keyReleaseEvent(QKeyEvent *event);
 
 public:
-    explicit CDriveWidget(QWidget *parent = 0);
+    explicit CDriveKeypad(QWidget *parent = 0);
     
 signals:
     void driveUpdate(CDriveWidget::DriveFlags);
