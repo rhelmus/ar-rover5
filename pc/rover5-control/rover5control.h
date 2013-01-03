@@ -17,6 +17,7 @@ class QTcpSocket;
 
 class CBTInterface;
 class CNumStatWidget;
+class CScaledPixmapWidget;
 
 class CRover5Control : public QMainWindow
 {
@@ -24,7 +25,7 @@ class CRover5Control : public QMainWindow
 
     enum { DRIVE_TIME = 1 };
 
-    QLabel *smallCamWidget, *largeCamWidget;
+    CScaledPixmapWidget *camWidget;
     QPushButton *btConnectButton;
 
     CNumStatWidget *motorPowerStatW[MOTOR_END], *motorSpeedStatW[MOTOR_END];
@@ -68,7 +69,11 @@ private slots:
     void btDisconnected(void);
     void btMsgReceived(EMessage m, QByteArray data);
     void btSendTest(void);
-    void driveUpdate(CDriveWidget::DriveFlags dir, int drivespeed);
+    void applyDriveUpdate(CDriveWidget::DriveFlags dir, int drivespeed);
+    void driveContinuous(int speed, int duration, EMotorDirection dir);
+    void driveDistance(int speed, int dist, EMotorDirection dir);
+    void turnContinuous(int speed, int duration, ETurnDirection dir);
+    void turnAngle(int speed, int angle, ETurnDirection dir);
     void applyCamZoom(void);
     
 public:

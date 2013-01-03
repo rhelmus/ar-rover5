@@ -2,6 +2,7 @@
 #include "btinterface.h"
 #include "numstatwidget.h"
 #include "rover5control.h"
+#include "scaledpixmapwidget.h"
 #include "utils.h"
 
 #include <QtGui>
@@ -128,9 +129,10 @@ QWidget *CRover5Control::createCameraWidgets()
 {
     QWidget *ret = createFrameGroupWidget("Camera");
 
-    ret->layout()->addWidget(largeCamWidget = new QLabel("Cam widget"));
-    largeCamWidget->setMinimumWidth(260);
-    largeCamWidget->setMinimumHeight(320);
+    ret->layout()->addWidget(camWidget = new CScaledPixmapWidget);
+    camWidget->setMinimumWidth(260);
+    camWidget->setMinimumHeight(320);
+    camWidget->setRotation(270);
 
     ret->layout()->addWidget(camZoomSlider = new QSlider(Qt::Horizontal));
     camZoomSlider->setRange(10, 40);
@@ -148,6 +150,7 @@ QWidget *CRover5Control::createCameraWidgets()
 QWidget *CRover5Control::createDriveWidgets()
 {
     QWidget *ret = createFrameGroupWidget("Drive");
+    ret->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
     QWidget *w = new QWidget;
     w->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
@@ -156,7 +159,15 @@ QWidget *CRover5Control::createDriveWidgets()
 
     CDriveWidget *dw = new CDriveWidget;
     connect(dw, SIGNAL(driveUpdate(CDriveWidget::DriveFlags, int)),
-            SLOT(driveUpdate(CDriveWidget::DriveFlags, int)));
+            SLOT(applyDriveUpdate(CDriveWidget::DriveFlags, int)));
+    connect(dw, SIGNAL(driveContReq(int,int,EMotorDirection)),
+            SLOT(driveContinuous(int,int,EMotorDirection)));
+    connect(dw, SIGNAL(driveDistReq(int,int,EMotorDirection)),
+            SLOT(driveDistance(int,int,EMotorDirection)));
+    connect(dw, SIGNAL(turnContReq(int,int,ETurnDirection)),
+            SLOT(turnAngle(int,int,ETurnDirection)));
+    connect(dw, SIGNAL(turnAngleReq(int,int,ETurnDirection)),
+            SLOT(turnAngle(int,int,ETurnDirection)));
     grid->addWidget(dw, 0, 0);
 
     return ret;
@@ -322,11 +333,7 @@ void CRover5Control::parseTcp(QDataStream &stream)
         QByteArray data;
         stream >> data;
         QImage img = QImage::fromData(data, "jpg");
-        QMatrix m;
-        m.rotate(270);
-        largeCamWidget->setPixmap(QPixmap::fromImage(img.transformed(m).scaled(largeCamWidget->size(),
-                                                                               Qt::IgnoreAspectRatio,
-                                                                               Qt::SmoothTransformation)));
+        camWidget->setPixmap(QPixmap::fromImage(img));
     }
 
 //    qDebug() << QString("Received msg: %1 (%2 bytes)\n").arg(msg).arg(tcpReadBlockSize);
@@ -472,7 +479,7 @@ void CRover5Control::btSendTest()
     btInterface->send(msg);
 }
 
-void CRover5Control::driveUpdate(CDriveWidget::DriveFlags dir, int drivespeed)
+void CRover5Control::applyDriveUpdate(CDriveWidget::DriveFlags dir, int drivespeed)
 {
     if (dir == CDriveWidget::DRIVE_NONE)
     {
@@ -512,6 +519,35 @@ void CRover5Control::driveUpdate(CDriveWidget::DriveFlags dir, int drivespeed)
         msg << (uint8_t)drivespeed << (uint8_t)tdir << (uint16_t)DRIVE_TIME;
         btInterface->send(msg);
     }
+}
+
+void CRover5Control::driveContinuous(int speed, int duration, EMotorDirection dir)
+{
+    CBTMessage msg(MSG_CMD_MOTORSPEED);
+    msg << (uint8_t)speed << (uint8_t)speed << (uint8_t)dir << (uint8_t)dir <<
+           (uint16_t)duration;
+    btInterface->send(msg);
+}
+
+void CRover5Control::driveDistance(int speed, int dist, EMotorDirection dir)
+{
+    CBTMessage msg(MSG_CMD_DRIVEDIST);
+    msg << (uint8_t)speed << (uint8_t)speed << (uint16_t)dist << (uint8_t)dir;
+    btInterface->send(msg);
+}
+
+void CRover5Control::turnContinuous(int speed, int duration, ETurnDirection dir)
+{
+    CBTMessage msg(MSG_CMD_TURN);
+    msg << (uint8_t)speed << (uint8_t)dir << (uint16_t)duration;
+    btInterface->send(msg);
+}
+
+void CRover5Control::turnAngle(int speed, int angle, ETurnDirection dir)
+{
+    CBTMessage msg(MSG_CMD_TURNANGLE);
+    msg << (uint8_t)speed << (uint16_t)angle << (uint8_t)dir;
+    btInterface->send(msg);
 }
 
 void CRover5Control::applyCamZoom()

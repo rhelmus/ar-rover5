@@ -1,6 +1,8 @@
 #ifndef DRIVEWIDGET_H
 #define DRIVEWIDGET_H
 
+#include "../../shared/shared.h"
+
 #include <QWidget>
 
 class QComboBox;
@@ -25,7 +27,7 @@ private:
 
     enum { MIN_POWER = 50, MAX_POWER = 160 };
 
-    QComboBox *contDriveDurationCombo;
+    QComboBox *contDriveModeCombo, *contDriveDurationCombo;
     QSpinBox *contDriveSpinBox;
     QSpinBox *motorPowerSpinBox;
 
@@ -37,7 +39,7 @@ private slots:
     void sendDriveUpdate(CDriveWidget::DriveFlags df);
     void updateContDriveMode(int index);
     void updateContDriveDuration(int index);
-    void sendContDrive(void) { }
+    void sendContDrive(void);
 
 protected:
 
@@ -46,6 +48,10 @@ public:
 
 signals:
     void driveUpdate(CDriveWidget::DriveFlags, int);
+    void driveContReq(int, int, EMotorDirection);
+    void driveDistReq(int, int, EMotorDirection);
+    void turnContReq(int, int, ETurnDirection);
+    void turnAngleReq(int, int, ETurnDirection);
 };
 
 class CDriveKeypad : public QWidget

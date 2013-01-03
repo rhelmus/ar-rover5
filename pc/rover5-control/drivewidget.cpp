@@ -44,11 +44,11 @@ QWidget *CDriveWidget::createContinuousDriveWidget()
     ret->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
     QHBoxLayout *hbox = new QHBoxLayout(ret);
 
-    QComboBox *combo = new QComboBox;
-    combo->addItems(QStringList() << "Drive FWD" << "Drive BWD" <<
-                                     "Turn left" << "Turn right");
-    connect(combo, SIGNAL(currentIndexChanged(int)), SLOT(updateContDriveMode(int)));
-    hbox->addWidget(combo);
+    hbox->addWidget(contDriveModeCombo = new QComboBox);
+    contDriveModeCombo->addItems(QStringList() << "Drive FWD" << "Drive BWD" <<
+                                                  "Turn left" << "Turn right");
+    connect(contDriveModeCombo, SIGNAL(currentIndexChanged(int)),
+            SLOT(updateContDriveMode(int)));
 
     hbox->addWidget(contDriveSpinBox = new QSpinBox);
 
@@ -63,7 +63,7 @@ QWidget *CDriveWidget::createContinuousDriveWidget()
     hbox->addWidget(button);
 
     // Apply initial settings
-    updateContDriveMode(combo->currentIndex());
+    updateContDriveMode(contDriveModeCombo->currentIndex());
     updateContDriveDuration(contDriveDurationCombo->currentIndex());
 
     return ret;
@@ -115,6 +115,34 @@ void CDriveWidget::updateContDriveMode(int index)
 void CDriveWidget::updateContDriveDuration(int index)
 {
     contDriveSpinBox->setEnabled(index != 0);
+}
+
+void CDriveWidget::sendContDrive()
+{
+    if (contDriveModeCombo->currentIndex() < 2) // Drive FWD/BWD
+    {
+        const EMotorDirection dir =
+                (contDriveModeCombo->currentIndex() == 0) ? DIR_FWD : DIR_BWD;
+
+        if (contDriveDurationCombo->currentIndex() == 0) // continuous
+            emit driveContReq(motorPowerSpinBox->value(), 0, dir);
+        else if (contDriveDurationCombo->currentIndex() == 1)
+            emit driveContReq(motorPowerSpinBox->value(), contDriveSpinBox->value(), dir);
+        else // distance
+            emit driveDistReq(motorPowerSpinBox->value(), contDriveSpinBox->value(), dir);
+    }
+    else // Rotate left/right
+    {
+        const ETurnDirection dir =
+                (contDriveModeCombo->currentIndex() == 2) ? DIR_LEFT : DIR_RIGHT;
+
+        if (contDriveDurationCombo->currentIndex() == 0) // continuous
+            emit turnContReq(motorPowerSpinBox->value(), 0, dir);
+        else if (contDriveDurationCombo->currentIndex() == 1)
+            emit turnContReq(motorPowerSpinBox->value(), contDriveSpinBox->value(), dir);
+        else // distance
+            emit turnAngleReq(motorPowerSpinBox->value(), contDriveSpinBox->value(), dir);
+    }
 }
 
 

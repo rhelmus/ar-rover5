@@ -19,7 +19,8 @@ SOURCES += main.cpp\
     btinterface.cpp \
     numstatwidget.cpp \
     utils.cpp \
-    drivewidget.cpp
+    drivewidget.cpp \
+    scaledpixmapwidget.cpp
 
 HEADERS  += rover5control.h \
     ../../shared/tcputils.h \
@@ -27,4 +28,5 @@ HEADERS  += rover5control.h \
     btinterface.h \
     numstatwidget.h \
     utils.h \
-    drivewidget.h
+    drivewidget.h \
+    scaledpixmapwidget.h
