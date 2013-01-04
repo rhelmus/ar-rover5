@@ -40,3 +40,9 @@ FORMS +=
 # Please do not modify the following two lines. Required for deployment.
 include(deployment.pri)
 qtcAddDeployment()
+
+# Stuff for landscape orientation, see
+# http://www.developer.nokia.com/Community/Wiki/CS001517_-_Lock_application_orientation_in_Qt_for_Symbian
+symbian: {
+    LIBS += -lcone -leikcore -lavkon
+}

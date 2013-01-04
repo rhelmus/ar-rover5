@@ -12,7 +12,8 @@
 CCamClient *CCamClient::instance = 0;
 
 CCamClient::CCamClient(QWidget *parent)
-    : QMainWindow(parent), tcpReadBlockSize(0), camFrameDelay(1000 / 15)
+    : QMainWindow(parent), camera(0), videoSurface(0), tcpReadBlockSize(0),
+      camFrameDelay(1000 / 15)
 {
     instance = this;
 
@@ -31,29 +32,20 @@ CCamClient::CCamClient(QWidget *parent)
 
     menuBar()->addAction("Connect", this, SLOT(connectToServer()));
 
-    initCamera();
+    //initCamera();
+    // Delayed cam init for correct landscape view
+    QTimer::singleShot(1000, this, SLOT(initCamera()));
+
     initTcp();
 }
 
 CCamClient::~CCamClient()
 {
-    videoSurface->stop();
-    camera->stop();
-}
-
-void CCamClient::initCamera()
-{
-    camera = new QCamera(this);
-    camera->setCaptureMode(QCamera::CaptureVideo);
-
-    QMediaService *ms = camera->service();
-    QVideoRendererControl *vrc = ms->requestControl<QVideoRendererControl*>();
-    vrc->setSurface(videoSurface = new CVideoSurface(this));
-
-    if (camera->state() == QCamera::ActiveState)
+    if (camera)
+    {
+        videoSurface->stop();
         camera->stop();
-
-    camera->start();
+    }
 }
 
 void CCamClient::initTcp()
@@ -64,7 +56,7 @@ void CCamClient::initTcp()
 
 void CCamClient::paintEvent(QPaintEvent *)
 {
-    if (videoSurface->isActive())
+    if (videoSurface && videoSurface->isActive())
     {
         QPainter painter(this);
         const QImage frame(videoSurface->getFrame());
@@ -75,7 +67,7 @@ void CCamClient::paintEvent(QPaintEvent *)
 
 void CCamClient::updateVideo()
 {
-    if ((tcpSocket->state() == QTcpSocket::ConnectedState) &&
+    if (camera && (tcpSocket->state() == QTcpSocket::ConnectedState) &&
         (lastFrameTime.isNull() || (lastFrameTime.elapsed() > camFrameDelay)))
     {
         lastFrameTime.start();
@@ -91,6 +83,21 @@ void CCamClient::updateVideo()
     }
 
     repaint();
+}
+
+void CCamClient::initCamera()
+{
+    camera = new QCamera(this);
+    camera->setCaptureMode(QCamera::CaptureVideo);
+
+    QMediaService *ms = camera->service();
+    QVideoRendererControl *vrc = ms->requestControl<QVideoRendererControl*>();
+    vrc->setSurface(videoSurface = new CVideoSurface(this));
+
+    if (camera->state() == QCamera::ActiveState)
+        camera->stop();
+
+    camera->start();
 }
 
 void CCamClient::connectToServer()

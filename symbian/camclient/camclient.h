@@ -22,11 +22,11 @@ class CCamClient : public QMainWindow
     QTime lastFrameTime;
     QTcpSocket *tcpSocket;
 
-    void initCamera(void);
     void initTcp(void);
     void parseTcp(QDataStream &stream);
 
 private slots:
+    void initCamera(void);
     void connectToServer(void);
     void serverHasData(void);
 

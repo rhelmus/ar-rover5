@@ -13,7 +13,8 @@ bool CVideoSurface::start(const QVideoSurfaceFormat &format)
     if ((imgformat != QImage::Format_Invalid) && !size.isEmpty())
     {
         imageFormat = imgformat;
-        setNativeResolution(QSize(320, 200)); // UNDONE: make configurable
+        //setNativeResolution(QSize(320, 200)); // UNDONE: make configurable
+//        setNativeResolution(QSize(320, 200));
         QAbstractVideoSurface::start(format);
         return true;
     }
