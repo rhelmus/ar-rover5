@@ -84,9 +84,9 @@ void CCamClient::updateVideo()
         QImageWriter imwriter(&imbuffer, "jpg");
         imwriter.write(videoSurface->getFrame());
 
-        CTcpMsgComposer tcpMsg(MSG_CAMFRAME);
-        tcpMsg << imbuffer.buffer();
-        tcpSocket->write(tcpMsg);
+        CTcpMsgComposer tcpmsg(MSG_CAMFRAME);
+        tcpmsg << imbuffer.buffer();
+        tcpSocket->write(tcpmsg);
         tcpSocket->flush();
     }
 
@@ -108,7 +108,7 @@ void CCamClient::serverHasData()
     {
         if (tcpReadBlockSize == 0)
         {
-            if (tcpSocket->bytesAvailable() < (int)sizeof(quint32))
+            if (tcpSocket->bytesAvailable() < (int)sizeof(uint32_t))
                 return;
 
             in >> tcpReadBlockSize;
@@ -134,6 +134,11 @@ void CCamClient::parseTcp(QDataStream &stream)
         qreal z;
         stream >> z;
         camera->focus()->zoomTo(1.0, z);
+//        QMessageBox::information(this, "heuh", QString("Cam zoom: %1/%2/%3").arg(z).arg(camera->focus()->maximumDigitalZoom()).arg(camera->focus()->maximumOpticalZoom()));
+    }
+    else // Unknown data
+    {
+        stream.skipRawData(tcpReadBlockSize-1);
     }
 //    QMessageBox::information(this, "heuh", QString("Received msg: %1 (%2 bytes)\n").arg(msg).arg(tcpReadBlockSize));
 }
