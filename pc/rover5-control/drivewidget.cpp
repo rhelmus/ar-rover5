@@ -42,17 +42,17 @@ QWidget *CDriveWidget::createContinuousDriveWidget()
 {
     QFrame *ret = new QFrame;
     ret->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
-    QHBoxLayout *hbox = new QHBoxLayout(ret);
+    QGridLayout *grid = new QGridLayout(ret);
 
-    hbox->addWidget(contDriveModeCombo = new QComboBox);
+    grid->addWidget(contDriveModeCombo = new QComboBox, 0, 0);
     contDriveModeCombo->addItems(QStringList() << "Drive FWD" << "Drive BWD" <<
                                                   "Turn left" << "Turn right");
     connect(contDriveModeCombo, SIGNAL(currentIndexChanged(int)),
             SLOT(updateContDriveMode(int)));
 
-    hbox->addWidget(contDriveSpinBox = new QSpinBox);
+    grid->addWidget(contDriveSpinBox = new QSpinBox, 0, 1);
 
-    hbox->addWidget(contDriveDurationCombo = new QComboBox);
+    grid->addWidget(contDriveDurationCombo = new QComboBox, 0, 2);
     contDriveDurationCombo->addItems(QStringList() << "Continuously" <<
                                      "centimeter" << "seconds");
     connect(contDriveDurationCombo, SIGNAL(currentIndexChanged(int)),
@@ -60,7 +60,10 @@ QWidget *CDriveWidget::createContinuousDriveWidget()
 
     QPushButton *button = new QPushButton("Go!");
     connect(button, SIGNAL(clicked()), SLOT(sendContDrive()));
-    hbox->addWidget(button);
+    grid->addWidget(button, 0, 3);
+
+    grid->addWidget(button = new QPushButton("Stop"), 1, 0);
+    connect(button, SIGNAL(clicked()), SIGNAL(stopDriveReq()));
 
     // Apply initial settings
     updateContDriveMode(contDriveModeCombo->currentIndex());
@@ -126,10 +129,11 @@ void CDriveWidget::sendContDrive()
 
         if (contDriveDurationCombo->currentIndex() == 0) // continuous
             emit driveContReq(motorPowerSpinBox->value(), 0, dir);
-        else if (contDriveDurationCombo->currentIndex() == 1)
-            emit driveContReq(motorPowerSpinBox->value(), contDriveSpinBox->value(), dir);
-        else // distance
+        else if (contDriveDurationCombo->currentIndex() == 1) // distance
             emit driveDistReq(motorPowerSpinBox->value(), contDriveSpinBox->value(), dir);
+        else // drive for a specified time
+            emit driveContReq(motorPowerSpinBox->value(), contDriveSpinBox->value(), dir);
+
     }
     else // Rotate left/right
     {
@@ -138,10 +142,10 @@ void CDriveWidget::sendContDrive()
 
         if (contDriveDurationCombo->currentIndex() == 0) // continuous
             emit turnContReq(motorPowerSpinBox->value(), 0, dir);
-        else if (contDriveDurationCombo->currentIndex() == 1)
-            emit turnContReq(motorPowerSpinBox->value(), contDriveSpinBox->value(), dir);
-        else // distance
+        else if (contDriveDurationCombo->currentIndex() == 1) // turn angle
             emit turnAngleReq(motorPowerSpinBox->value(), contDriveSpinBox->value(), dir);
+        else // turn for a specified time
+            emit turnContReq(motorPowerSpinBox->value(), contDriveSpinBox->value(), dir);
     }
 }
 

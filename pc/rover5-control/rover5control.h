@@ -25,8 +25,9 @@ class CRover5Control : public QMainWindow
 
     enum { DRIVE_TIME = 1 };
 
+    QLabel *btConnectedStatLabel, *tcpConnectedStatLabel;
+
     CScaledPixmapWidget *camWidget;
-    QPushButton *btConnectButton;
 
     CNumStatWidget *motorPowerStatW[MOTOR_END], *motorSpeedStatW[MOTOR_END];
     CNumStatWidget *motorDistStatW[MOTOR_END], *motorCurrentStatW[MOTOR_END];
@@ -74,6 +75,7 @@ private slots:
     void driveDistance(int speed, int dist, EMotorDirection dir);
     void turnContinuous(int speed, int duration, ETurnDirection dir);
     void turnAngle(int speed, int angle, ETurnDirection dir);
+    void stopDrive(void);
     void applyCamZoom(void);
     
 public:

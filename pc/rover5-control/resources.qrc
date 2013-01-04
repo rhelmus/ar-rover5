@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>resources/connect.png</file>
+    </qresource>
+</RCC>

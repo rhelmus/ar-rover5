@@ -30,3 +30,8 @@ HEADERS  += rover5control.h \
     utils.h \
     drivewidget.h \
     scaledpixmapwidget.h
+
+OTHER_FILES +=
+
+RESOURCES += \
+    resources.qrc

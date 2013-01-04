@@ -52,6 +52,7 @@ signals:
     void driveDistReq(int, int, EMotorDirection);
     void turnContReq(int, int, ETurnDirection);
     void turnAngleReq(int, int, ETurnDirection);
+    void stopDriveReq(void);
 };
 
 class CDriveKeypad : public QWidget

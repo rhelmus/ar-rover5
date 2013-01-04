@@ -108,6 +108,8 @@ void CMotors::moveDist(uint8_t s, uint32_t dist, EMotorDirection dir)
         setMotorDirection(static_cast<EMotor>(m), dir);
         setMotorSpeed(static_cast<EMotor>(m), s);
     }
+
+    encoders.resetDist();
 }
 
 void CMotors::turnDist(uint8_t s, uint32_t dist, ETurnDirection dir)
@@ -127,6 +129,7 @@ void CMotors::turnDist(uint8_t s, uint32_t dist, ETurnDirection dir)
     }
 
     fixedTurning = true;
+    encoders.resetDist();
 }
 
 void CMotors::setDuration(uint32_t t)

@@ -35,14 +35,20 @@ CRover5Control::CRover5Control(QWidget *parent)
     vbox->addWidget(button);
 #endif
 
+    QToolBar *toolb = addToolBar("toolbar");
+    toolb->addAction(QIcon(":/resources/connect.png"), "Toggle BT", this,
+                     SLOT(toggleBtConnection()));
+
     QGridLayout *grid = new QGridLayout(cw);
 
     grid->addWidget(createStatusWidgets(), 0, 0, 2, 1);
     grid->addWidget(createCameraWidgets(), 0, 1);
     grid->addWidget(createDriveWidgets(), 1, 1);
 
-    /*grid->addWidget(btConnectButton = new QPushButton("BT connect"), 2, 0);
-    connect(btConnectButton, SIGNAL(clicked()), SLOT(toggleBtConnection()));*/
+    statusBar()->addPermanentWidget(btConnectedStatLabel = new QLabel("BT disconnected"));
+    btConnectedStatLabel->setFrameStyle(QFrame::Panel | QFrame::Raised);
+    statusBar()->addPermanentWidget(tcpConnectedStatLabel = new QLabel("TCP disconnected"));
+    tcpConnectedStatLabel->setFrameStyle(QFrame::Panel | QFrame::Raised);
 
     initTcpServer();
 
@@ -130,9 +136,8 @@ QWidget *CRover5Control::createCameraWidgets()
     QWidget *ret = createFrameGroupWidget("Camera");
 
     ret->layout()->addWidget(camWidget = new CScaledPixmapWidget);
-    camWidget->setMinimumWidth(260);
-    camWidget->setMinimumHeight(320);
-    camWidget->setRotation(270);
+    camWidget->setMinimumWidth(320);
+    camWidget->setMinimumHeight(260);
 
     ret->layout()->addWidget(camZoomSlider = new QSlider(Qt::Horizontal));
     camZoomSlider->setRange(10, 40);
@@ -165,9 +170,10 @@ QWidget *CRover5Control::createDriveWidgets()
     connect(dw, SIGNAL(driveDistReq(int,int,EMotorDirection)),
             SLOT(driveDistance(int,int,EMotorDirection)));
     connect(dw, SIGNAL(turnContReq(int,int,ETurnDirection)),
-            SLOT(turnAngle(int,int,ETurnDirection)));
+            SLOT(turnContinuous(int,int,ETurnDirection)));
     connect(dw, SIGNAL(turnAngleReq(int,int,ETurnDirection)),
             SLOT(turnAngle(int,int,ETurnDirection)));
+    connect(dw, SIGNAL(stopDriveReq()), SLOT(stopDrive()));
     grid->addWidget(dw, 0, 0);
 
     return ret;
@@ -343,6 +349,9 @@ void CRover5Control::tcpClientConnected()
 {
     qDebug("Client connected\n");
 
+    tcpConnectedStatLabel->setText("TCP connected");
+    tcpConnectedStatLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+
     if (tcpClientSocket)
         tcpClientSocket->disconnectFromHost();
 
@@ -356,7 +365,11 @@ void CRover5Control::tcpClientDisconnected(QObject *obj)
 {
     // Current client?
     if (tcpClientSocket == obj)
+    {
         tcpClientSocket = 0;
+        tcpConnectedStatLabel->setText("TCP disconnected");
+        tcpConnectedStatLabel->setFrameStyle(QFrame::Panel | QFrame::Raised);
+    }
 
     obj->deleteLater();
 }
@@ -395,12 +408,14 @@ void CRover5Control::toggleBtConnection()
 
 void CRover5Control::btConnected()
 {
-    btConnectButton->setText("BT disconnect");
+    btConnectedStatLabel->setText("BT connected");
+    btConnectedStatLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
 }
 
 void CRover5Control::btDisconnected()
 {
-    btConnectButton->setText("BT connect");
+    btConnectedStatLabel->setText("BT disconnected");
+    btConnectedStatLabel->setFrameStyle(QFrame::Panel | QFrame::Raised);
 }
 
 void CRover5Control::btMsgReceived(EMessage m, QByteArray data)
@@ -532,7 +547,7 @@ void CRover5Control::driveContinuous(int speed, int duration, EMotorDirection di
 void CRover5Control::driveDistance(int speed, int dist, EMotorDirection dir)
 {
     CBTMessage msg(MSG_CMD_DRIVEDIST);
-    msg << (uint8_t)speed << (uint8_t)speed << (uint16_t)dist << (uint8_t)dir;
+    msg << (uint8_t)speed << (uint16_t)dist << (uint8_t)dir;
     btInterface->send(msg);
 }
 
@@ -548,6 +563,11 @@ void CRover5Control::turnAngle(int speed, int angle, ETurnDirection dir)
     CBTMessage msg(MSG_CMD_TURNANGLE);
     msg << (uint8_t)speed << (uint16_t)angle << (uint8_t)dir;
     btInterface->send(msg);
+}
+
+void CRover5Control::stopDrive()
+{
+    btInterface->send(CBTMessage(MSG_CMD_STOP));
 }
 
 void CRover5Control::applyCamZoom()
