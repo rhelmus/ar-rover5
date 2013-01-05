@@ -42,7 +42,7 @@ void CBTInterface::btHasData()
     //  3 .. n-1: Data
     //  n: End marker
 
-    qDebug() << "Got some bt data:" << bluetoothSocket->bytesAvailable() << "bytes";
+//    qDebug() << "Got some bt data:" << bluetoothSocket->bytesAvailable() << "bytes";
 
     recBuffer += bluetoothSocket->readAll();
 

@@ -62,7 +62,7 @@ QWidget *CDriveWidget::createContinuousDriveWidget()
     connect(button, SIGNAL(clicked()), SLOT(sendContDrive()));
     grid->addWidget(button, 0, 3);
 
-    grid->addWidget(button = new QPushButton("Stop"), 1, 0);
+    grid->addWidget(button = new QPushButton("Stop"), 1, 3);
     connect(button, SIGNAL(clicked()), SIGNAL(stopDriveReq()));
 
     // Apply initial settings
@@ -147,6 +147,16 @@ void CDriveWidget::sendContDrive()
         else // turn for a specified time
             emit turnContReq(motorPowerSpinBox->value(), contDriveSpinBox->value(), dir);
     }
+}
+
+void CDriveWidget::keyPressEvent(QKeyEvent *event)
+{
+    if (event->key() == Qt::Key_Plus)
+        motorPowerSpinBox->stepBy(5);
+    else if (event->key() == Qt::Key_Minus)
+        motorPowerSpinBox->stepBy(-5);
+    else
+        QWidget::keyPressEvent(event);
 }
 
 

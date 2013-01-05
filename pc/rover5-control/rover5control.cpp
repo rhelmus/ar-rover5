@@ -136,8 +136,9 @@ QWidget *CRover5Control::createCameraWidgets()
     QWidget *ret = createFrameGroupWidget("Camera");
 
     ret->layout()->addWidget(camWidget = new CScaledPixmapWidget);
-    camWidget->setMinimumWidth(320);
-    camWidget->setMinimumHeight(260);
+    camWidget->setRotation(270);
+//    camWidget->setMinimumWidth(320);
+//    camWidget->setMinimumHeight(260);
 
     ret->layout()->addWidget(camZoomSlider = new QSlider(Qt::Horizontal));
     camZoomSlider->setRange(10, 40);
@@ -340,6 +341,7 @@ void CRover5Control::parseTcp(QDataStream &stream)
         stream >> data;
         QImage img = QImage::fromData(data, "jpg");
         camWidget->setPixmap(QPixmap::fromImage(img));
+//        qDebug() << "cam frame size:" << img.size();
     }
 
 //    qDebug() << QString("Received msg: %1 (%2 bytes)\n").arg(msg).arg(tcpReadBlockSize);
@@ -420,7 +422,7 @@ void CRover5Control::btDisconnected()
 
 void CRover5Control::btMsgReceived(EMessage m, QByteArray data)
 {
-    qDebug() << "Got msg:" << (int)m << "with" << data.size() << "bytes";
+//    qDebug() << "Got msg:" << (int)m << "with" << data.size() << "bytes";
 
     if (m == MSG_MOTOR_TARGETPOWER)
     {

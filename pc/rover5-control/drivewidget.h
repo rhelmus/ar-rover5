@@ -42,6 +42,7 @@ private slots:
     void sendContDrive(void);
 
 protected:
+    virtual void keyPressEvent(QKeyEvent *event);
 
 public:
     explicit CDriveWidget(QWidget *parent = 0);
