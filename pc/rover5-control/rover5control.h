@@ -7,6 +7,7 @@
 #include <stdint.h>
 
 #include <QMainWindow>
+#include <QTime>
 
 class QLabel;
 class QPushButton;
@@ -45,6 +46,7 @@ class CRover5Control : public QMainWindow
     uint32_t tcpReadBlockSize;
 
     CBTInterface *btInterface;
+    QTime lastPingTime;
 
     QWidget *createStatusWidgets(void);
     QWidget *createCameraWidgets(void);
@@ -69,7 +71,6 @@ private slots:
     void btConnected(void);
     void btDisconnected(void);
     void btMsgReceived(EMessage m, QByteArray data);
-    void btSendTest(void);
     void applyDriveUpdate(CDriveWidget::DriveFlags dir, int drivespeed);
     void driveContinuous(int speed, int duration, EMotorDirection dir);
     void driveDistance(int speed, int dist, EMotorDirection dir);
@@ -77,6 +78,9 @@ private slots:
     void turnAngle(int speed, int angle, ETurnDirection dir);
     void stopDrive(void);
     void applyCamZoom(void);
+
+protected:
+    virtual void closeEvent(QCloseEvent *event);
     
 public:
     CRover5Control(QWidget *parent = 0);

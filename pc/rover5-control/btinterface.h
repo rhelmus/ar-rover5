@@ -25,6 +25,7 @@ class CBTInterface : public QObject
     QByteArray recBuffer;
 
 private slots:
+    void doBtDisconnect(void);
     void btConnected(void);
     void btDisconnected(void);
     void btHasData(void);

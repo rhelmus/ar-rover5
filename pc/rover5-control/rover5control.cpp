@@ -487,13 +487,13 @@ void CRover5Control::btMsgReceived(EMessage m, QByteArray data)
         rollStatW->set(0, (int16_t)bytesToInt(data[2], data[3]));
         headingStatW->set(0, bytesToInt(data[4], data[5]));
     }
-}
-
-void CRover5Control::btSendTest()
-{
-    CBTMessage msg(MSG_BATTERY);
-    msg << (uint8_t)10;
-    btInterface->send(msg);
+    else if (m == MSG_PING)
+    {
+        btInterface->send(CBTMessage(MSG_PONG));
+        if (!lastPingTime.isNull())
+            pingStatW->set(0, lastPingTime.elapsed());
+        lastPingTime.restart();
+    }
 }
 
 void CRover5Control::applyDriveUpdate(CDriveWidget::DriveFlags dir, int drivespeed)
@@ -581,4 +581,16 @@ void CRover5Control::applyCamZoom()
         tcpClientSocket->write(tcpmsg);
         qDebug() << "send zoom: " << static_cast<qreal>(camZoomSlider->value() / 10.0);
     }
+}
+
+void CRover5Control::closeEvent(QCloseEvent *event)
+{
+    btInterface->disconnectBT();
+    QTime waittime;
+    waittime.start();
+
+    while ((waittime.elapsed() < 3000) && btInterface->isConnected())
+        qApp->processEvents();
+
+    QMainWindow::closeEvent(event);
 }

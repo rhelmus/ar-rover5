@@ -6,6 +6,7 @@
 #include <Usb.h>
 #include <Wire.h>
 
+#include <avr/wdt.h>
 
 // From http://jeelabs.org/2011/05/22/atmega-memory-use/
 int freeRam()
@@ -21,24 +22,25 @@ namespace {
 volatile EMessage lastRecTWIMessage = MSG_NONE;
 volatile CRingBuffer<128> TWIPassBuffer;
 
-bool receivedBTStart, receivedBTMSGSize;
-uint8_t BTMsgSize, BTMsgBytesRead;
-CRingBuffer<BRIDGE_MAX_REQSIZE> tempBTMsgBuffer;
-
 USB usbDev;
 BTD bluetoothDev(&usbDev);
 SPP serialBluetooth(&bluetoothDev);
+bool btConnected;
+
+bool receivedBTStart, receivedBTMSGSize;
+uint8_t BTMsgSize, BTMsgBytesRead;
+CRingBuffer<BRIDGE_MAX_REQSIZE> tempBTMsgBuffer;
 
 
 void TWIRequest(void)
 {
     // UNDONE
-    if (lastRecTWIMessage == MSG_PING)
+/*    if (lastRecTWIMessage == MSG_PING_BR)
     {
         uint8_t buf[4];
         longToBytes(132560, buf);
         Wire.write(buf, 4);
-    }
+    }*/
 
     lastRecTWIMessage = MSG_NONE;
 }
@@ -92,16 +94,26 @@ void setup()
     Wire.onRequest(TWIRequest);
     Wire.onReceive(TWIReceive);
 
+    // Enable watchdog in case bluetooth crashes (e.g. out of range)
+    wdt_enable(WDTO_4S);
+
     Serial.println(F("Initialized"));
     Serial.print(F("Free RAM: ")); Serial.println(freeRam());
 }
 
 void loop()
 {
-    usbDev.Task();
-
     const uint32_t curtime = millis();
-    static uint32_t updelay;
+    static uint32_t updelay, pinguptime, ignoreconupdatedelay;
+    static EMessage curbtmessage = MSG_NONE;
+
+    if ((ignoreconupdatedelay < curtime) && !btConnected && serialBluetooth.connected)
+        btConnected = true;
+
+    if (!btConnected)
+        wdt_reset(); // Only update if not connected yet or got a pong (see below)
+
+    usbDev.Task();
 
     if (updelay < curtime)
     {
@@ -131,6 +143,8 @@ void loop()
                 }
                 else if (BTMsgBytesRead < BTMsgSize)
                 {
+                    if (curbtmessage == MSG_NONE)
+                        curbtmessage = static_cast<EMessage>(b);
                     tempBTMsgBuffer.push(b);
                     ++BTMsgBytesRead;
                 }
@@ -139,19 +153,55 @@ void loop()
                     // Msg got through OK?
                     if (b == MSG_BT_ENDMARKER)
                     {
-                        Wire.beginTransmission(SPIDER_TWI_ADDRESS);
-                        while (!tempBTMsgBuffer.isEmpty())
-                            Wire.write(tempBTMsgBuffer.pop());
-                        Wire.endTransmission();
+                        // First check special cases that are not passed through
+                        if (curbtmessage == MSG_PONG)
+                        {
+                            tempBTMsgBuffer.clear();
+                            wdt_reset();
+                        }
+                        else if (curbtmessage == MSG_CNTRL_DISCONNECT)
+                        {
+                            tempBTMsgBuffer.clear();
+                            Serial.println("cntrl disconnect");
+                            btConnected = false;
+                            // Wait for a bit for actual disconnection before
+                            // updating status
+                            ignoreconupdatedelay = curtime + 3000;
+                        }
+                        else
+                        {
+                            Wire.beginTransmission(SPIDER_TWI_ADDRESS);
+                            while (!tempBTMsgBuffer.isEmpty())
+                                Wire.write(tempBTMsgBuffer.pop());
+                            Wire.endTransmission();
+                        }
                     }
 
                     receivedBTStart = receivedBTMSGSize = false;
                     BTMsgBytesRead = 0;
+                    curbtmessage = MSG_NONE;
                     tempBTMsgBuffer.clear();
                 }
 
                 ++count;
             }
+#if 0
+            if (count)
+            {
+                Serial.print("Send bytes:"); Serial.println(count, DEC);
+            }
+#endif
+        }
+    }
+    else if (pinguptime < curtime)
+    {
+        pinguptime = curtime + 100;
+        if (serialBluetooth.connected)
+        {
+            TWIPassBuffer.push(MSG_BT_STARTMARKER);
+            TWIPassBuffer.push(1);
+            TWIPassBuffer.push(MSG_PING);
+            TWIPassBuffer.push(MSG_BT_ENDMARKER);
         }
     }
 }

@@ -6,8 +6,7 @@
 enum EMessage
 {
     // Spider to control messages
-    MSG_PING = 0,
-    MSG_SHARPIR,
+    MSG_SHARPIR = 0,
     MSG_MOTOR_TARGETPOWER,
     MSG_MOTOR_SETPOWER,
     MSG_MOTOR_TARGETSPEED,
@@ -20,18 +19,20 @@ enum EMessage
     MSG_IMU,
 
     // Control to spider messages
-    MSG_PONG,
     MSG_CMD_MOTORSPEED,
     MSG_CMD_DRIVEDIST,
     MSG_CMD_TURN,
     MSG_CMD_TURNANGLE,
     MSG_CMD_STOP,
 
-    // Phone to control messages
+    // Messages between phone and control
     MSG_CAMFRAME,
-
-    // Control to phone messages
     MSG_SETZOOM,
+
+    // Messages between bridge and control
+    MSG_PING, // Ping from bridge to control
+    MSG_PONG, // Ping response from control to bridge
+    MSG_CNTRL_DISCONNECT,
 
     // Bluetooth specific
     MSG_BT_STARTMARKER,

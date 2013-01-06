@@ -1,20 +1,30 @@
 #include "btinterface.h"
 
+#include <QApplication>
 #include <QBluetoothSocket>
+#include <QDebug>
+#include <QTime>
 #include <QTimer>
 
-CBTInterface::CBTInterface(QObject *parent) : QObject(parent)
+CBTInterface::CBTInterface(QObject *parent) : QObject(parent), bluetoothSocket(0)
 {
-    bluetoothSocket =
+    /*bluetoothSocket =
             new QtMobility::QBluetoothSocket(QtMobility::QBluetoothSocket::RfcommSocket,
                                              this);
     connect(bluetoothSocket, SIGNAL(connected()), SLOT(btConnected()));
     connect(bluetoothSocket, SIGNAL(disconnected()), SLOT(btDisconnected()));
-    connect(bluetoothSocket, SIGNAL(readyRead()), SLOT(btHasData()));
+    connect(bluetoothSocket, SIGNAL(readyRead()), SLOT(btHasData()));*/
 
     btSendTimer = new QTimer(this);
     btSendTimer->setInterval(BTQUEUE_DELAY);
     connect(btSendTimer, SIGNAL(timeout()), SLOT(btSendFromQueue()));
+}
+
+void CBTInterface::doBtDisconnect()
+{
+    bluetoothSocket->disconnectFromService();
+    bluetoothSocket->deleteLater();
+    bluetoothSocket = 0;
 }
 
 void CBTInterface::btConnected()
@@ -95,18 +105,49 @@ void CBTInterface::btSendFromQueue()
 
 void CBTInterface::connectBT()
 {
+    // There seems to be a bug in QtMobility causing it to crash on reconnect,
+    // deleting & constructing new sockets everytime seems to be a work around
+    if (!bluetoothSocket)
+    {
+        bluetoothSocket =
+                new QtMobility::QBluetoothSocket(QtMobility::QBluetoothSocket::RfcommSocket,
+                                                 this);
+        connect(bluetoothSocket, SIGNAL(connected()), SLOT(btConnected()));
+        connect(bluetoothSocket, SIGNAL(disconnected()), SLOT(btDisconnected()));
+        connect(bluetoothSocket, SIGNAL(readyRead()), SLOT(btHasData()));
+    }
+
     bluetoothSocket->connectToService(QtMobility::QBluetoothAddress("00:11:67:AD:CD:BB"),
                                       QtMobility::QBluetoothUuid::Rfcomm);
 }
 
 void CBTInterface::disconnectBT()
 {
-    bluetoothSocket->disconnectFromService();
+    if (bluetoothSocket)
+    {
+        qDebug() << "Sending disconnect";
+        send(CBTMessage(MSG_CNTRL_DISCONNECT));
+
+        // Flush
+        while (!btSendQueue.isEmpty())
+            bluetoothSocket->write(btSendQueue.dequeue());
+
+        QTimer::singleShot(2000, this, SLOT(doBtDisconnect()));
+        /*QTime waittime;
+        waittime.start();
+        while (waittime.elapsed() < 5000)
+            qApp->processEvents();
+
+        bluetoothSocket->disconnectFromService();
+
+        bluetoothSocket->deleteLater();
+        bluetoothSocket = 0;*/
+    }
 }
 
 bool CBTInterface::isConnected() const
 {
-    return (bluetoothSocket->state() == QtMobility::QBluetoothSocket::ConnectedState);
+    return (bluetoothSocket && (bluetoothSocket->state() == QtMobility::QBluetoothSocket::ConnectedState));
 }
 
 void CBTInterface::send(const QByteArray &data)
