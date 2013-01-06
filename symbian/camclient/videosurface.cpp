@@ -14,7 +14,7 @@ bool CVideoSurface::start(const QVideoSurfaceFormat &format)
     {
         imageFormat = imgformat;
         //setNativeResolution(QSize(320, 200)); // UNDONE: make configurable
-//        setNativeResolution(QSize(320, 200));
+//        setNativeResolution(QSize(200, 360));
         QAbstractVideoSurface::start(format);
         return true;
     }
@@ -34,8 +34,6 @@ bool CVideoSurface::present(const QVideoFrame &frame)
     }
     else
     {
-        // UNDONE
-        //m_target->updateVideo();
         CCamClient::getInstance()->updateVideo();
         return true;
     }
