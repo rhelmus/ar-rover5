@@ -13,7 +13,7 @@ CCamClient *CCamClient::instance = 0;
 
 CCamClient::CCamClient(QWidget *parent)
     : QMainWindow(parent), camera(0), videoSurface(0), tcpReadBlockSize(0),
-      camFrameDelay(1000 / 15)
+      camFrameDelay(1000 / 15), lastServerPort(0)
 {
     instance = this;
 
@@ -31,6 +31,7 @@ CCamClient::CCamClient(QWidget *parent)
     setCentralWidget(cw);
 
     menuBar()->addAction("Connect", this, SLOT(connectToServer()));
+    menuBar()->addAction("Connect to ip", this, SLOT(connectToServerIP()));
 
     //initCamera();
     // Delayed cam init for correct landscape view
@@ -51,7 +52,14 @@ CCamClient::~CCamClient()
 void CCamClient::initTcp()
 {
     tcpSocket = new QTcpSocket(this);
+    connect(tcpSocket, SIGNAL(connected()), SLOT(handleConnected()));
     connect(tcpSocket, SIGNAL(readyRead()), this, SLOT(serverHasData()));
+
+    tcpReconnectTimer = new QTimer(this);
+    tcpReconnectTimer->setInterval(2500);
+    connect(tcpReconnectTimer, SIGNAL(timeout()), SLOT(tryReconnect()));
+    connect(tcpSocket, SIGNAL(disconnected()), tcpReconnectTimer, SLOT(start()));
+    connect(tcpSocket, SIGNAL(connected()), tcpReconnectTimer, SLOT(stop()));
 }
 
 void CCamClient::paintEvent(QPaintEvent *)
@@ -70,8 +78,6 @@ void CCamClient::updateVideo()
     if (camera && (tcpSocket->state() == QTcpSocket::ConnectedState) &&
         (lastFrameTime.isNull() || (lastFrameTime.elapsed() > camFrameDelay)))
     {
-        lastFrameTime.start();
-
         QBuffer imbuffer;
         QImageWriter imwriter(&imbuffer, "jpg");
         imwriter.write(videoSurface->getFrame());
@@ -80,6 +86,8 @@ void CCamClient::updateVideo()
         tcpmsg << imbuffer.buffer();
         tcpSocket->write(tcpmsg);
         tcpSocket->flush();
+
+        lastFrameTime.start();
     }
 
     repaint();
@@ -88,7 +96,7 @@ void CCamClient::updateVideo()
 void CCamClient::initCamera()
 {
     camera = new QCamera(this);
-    camera->setCaptureMode(QCamera::CaptureVideo);
+    camera->setCaptureMode(QCamera::CaptureStillImage);
 
     QMediaService *ms = camera->service();
     QVideoRendererControl *vrc = ms->requestControl<QVideoRendererControl*>();
@@ -104,6 +112,39 @@ void CCamClient::connectToServer()
 {
     tcpSocket->abort();
     tcpSocket->connectToHost("192.168.1.40", 40000);
+}
+
+void CCamClient::connectToServerIP()
+{
+    QDialog dialog(this);
+    dialog.setModal(true);
+
+    QVBoxLayout *vbox = new QVBoxLayout(&dialog);
+
+    QLabel *label = new QLabel("IP address");
+    vbox->addWidget(label);
+
+    QLineEdit *ipedit = new QLineEdit("192.168.1.66");
+    ipedit->setInputMask("000.000.000.000;_");
+    vbox->addWidget(ipedit);
+
+    QDialogButtonBox *bbox = new QDialogButtonBox(QDialogButtonBox::Ok |
+                                                  QDialogButtonBox::Cancel);
+    connect(bbox, SIGNAL(accepted()), &dialog, SLOT(accept()));
+    connect(bbox, SIGNAL(rejected()), &dialog, SLOT(reject()));
+    vbox->addWidget(bbox);
+
+    if (dialog.exec() == QDialog::Accepted)
+    {
+        tcpSocket->abort();
+        tcpSocket->connectToHost(ipedit->text(), 40000);
+    }
+}
+
+void CCamClient::handleConnected()
+{
+    lastServerAddress = tcpSocket->peerAddress();
+    lastServerPort = tcpSocket->peerPort();
 }
 
 void CCamClient::serverHasData()
@@ -127,6 +168,20 @@ void CCamClient::serverHasData()
         parseTcp(in);
         tcpReadBlockSize = 0;
     }
+}
+
+void CCamClient::tryReconnect()
+{
+    if (tcpSocket->state() == QTcpSocket::UnconnectedState)
+    {
+        if (!lastServerAddress.isNull() && (lastServerPort != 0))
+        {
+            tcpSocket->abort();
+            tcpSocket->connectToHost(lastServerAddress, lastServerPort);
+        }
+    }
+    else
+        tcpReconnectTimer->stop();
 }
 
 void CCamClient::parseTcp(QDataStream &stream)
