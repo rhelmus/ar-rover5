@@ -135,14 +135,25 @@ QWidget *CRover5Control::createCameraWidgets()
 {
     QWidget *ret = createFrameGroupWidget("Camera");
 
-    ret->layout()->addWidget(camWidget = new CScaledPixmapWidget);
-    camWidget->setRotation(270);
-//    camWidget->setMinimumWidth(320);
-//    camWidget->setMinimumHeight(260);
+    QWidget *w = new QWidget;
+    ret->layout()->addWidget(w);
+    QHBoxLayout *hbox = new QHBoxLayout(w);
 
-    ret->layout()->addWidget(camZoomSlider = new QSlider(Qt::Horizontal));
+    hbox->addWidget(camWidget = new CScaledPixmapWidget);
+    camWidget->setRotation(270);
+
+    QFrame *frame = new QFrame;
+    frame->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    frame->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
+    QFormLayout *form = new QFormLayout(frame);
+    hbox->addWidget(frame, 0, Qt::AlignTop);
+
+    form->addRow("Zoom", camZoomSlider = new QSlider(Qt::Horizontal));
     camZoomSlider->setRange(10, 40);
     camZoomSlider->setTickInterval(1);
+
+    form->addRow("Brightness", camBrightnessSpinBox = new QSpinBox);
+    camBrightnessSpinBox->setRange(0, 255);
 
     zoomApplyTimer = new QTimer(this);
     zoomApplyTimer->setInterval(500);
@@ -340,6 +351,8 @@ void CRover5Control::parseTcp(QDataStream &stream)
         QByteArray data;
         stream >> data;
         QImage img = QImage::fromData(data, "jpg");
+        if (camBrightnessSpinBox->value() > 0)
+            changeBrightness(img, camBrightnessSpinBox->value());
         camWidget->setPixmap(QPixmap::fromImage(img));
 //        qDebug() << "cam frame size:" << img.size();
     }

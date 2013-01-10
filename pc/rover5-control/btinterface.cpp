@@ -22,9 +22,12 @@ CBTInterface::CBTInterface(QObject *parent) : QObject(parent), bluetoothSocket(0
 
 void CBTInterface::doBtDisconnect()
 {
-    bluetoothSocket->disconnectFromService();
-    bluetoothSocket->deleteLater();
-    bluetoothSocket = 0;
+    if (bluetoothSocket)
+    {
+        bluetoothSocket->disconnectFromService();
+        bluetoothSocket->deleteLater();
+        bluetoothSocket = 0;
+    }
 }
 
 void CBTInterface::btConnected()
@@ -105,6 +108,8 @@ void CBTInterface::btSendFromQueue()
 
 void CBTInterface::connectBT()
 {
+    doBtDisconnect();
+
     // There seems to be a bug in QtMobility causing it to crash on reconnect,
     // deleting & constructing new sockets everytime seems to be a work around
     if (!bluetoothSocket)

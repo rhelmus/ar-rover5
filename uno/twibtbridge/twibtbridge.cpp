@@ -195,7 +195,7 @@ void loop()
     }
     else if (pinguptime < curtime)
     {
-        pinguptime = curtime + 100;
+        pinguptime = curtime + 500;
         if (serialBluetooth.connected)
         {
             TWIPassBuffer.push(MSG_BT_STARTMARKER);

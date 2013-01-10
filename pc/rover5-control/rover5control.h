@@ -39,6 +39,7 @@ class CRover5Control : public QMainWindow
 
     QSlider *camZoomSlider;
     QTimer *zoomApplyTimer;
+    QSpinBox *camBrightnessSpinBox;
 
     QTcpServer *tcpServer;
     QSignalMapper *tcpDisconnectMapper;
