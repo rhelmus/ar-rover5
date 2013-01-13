@@ -19,7 +19,6 @@ int freeRam()
 
 namespace {
 
-volatile EMessage lastRecTWIMessage = MSG_NONE;
 volatile CRingBuffer<128> TWIPassBuffer;
 
 USB usbDev;
@@ -31,32 +30,18 @@ bool receivedBTStart, receivedBTMSGSize;
 uint8_t BTMsgSize, BTMsgBytesRead;
 CRingBuffer<BRIDGE_MAX_REQSIZE> tempBTMsgBuffer;
 
-
-void TWIRequest(void)
-{
-    // UNDONE
-/*    if (lastRecTWIMessage == MSG_PING_BR)
-    {
-        uint8_t buf[4];
-        longToBytes(132560, buf);
-        Wire.write(buf, 4);
-    }*/
-
-    lastRecTWIMessage = MSG_NONE;
-}
-
 void TWIReceive(int bytes)
 {
-    lastRecTWIMessage = static_cast<EMessage>(Wire.read());
+    const EMessage msg = static_cast<EMessage>(Wire.read());
     --bytes;
 
-    if ((lastRecTWIMessage >= MSG_PASS_START) && (lastRecTWIMessage <= MSG_PASS_END))
+    if ((msg >= MSG_PASS_START) && (msg <= MSG_PASS_END))
     {
         if (serialBluetooth.connected)
         {
             TWIPassBuffer.push(MSG_BT_STARTMARKER);
             TWIPassBuffer.push(bytes + 1);
-            TWIPassBuffer.push(lastRecTWIMessage);
+            TWIPassBuffer.push(msg);
         }
 
         while (bytes)
@@ -91,7 +76,6 @@ void setup()
     usbDev.Init();
 
     Wire.begin(BRIDGE_TWI_ADDRESS);
-    Wire.onRequest(TWIRequest);
     Wire.onReceive(TWIReceive);
 
     // Enable watchdog in case bluetooth crashes (e.g. out of range)

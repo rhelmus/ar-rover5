@@ -56,8 +56,31 @@ void updateMotors(uint8_t speed, EJoyDir dir)
 {
     switch (dir)
     {
+#ifdef MECANUM_MOVEMENT
+    case JOY_LEFT:
+        motors.setMotorDirection(MOTOR_LF, DIR_BWD);
+        motors.setMotorDirection(MOTOR_LB, DIR_FWD);
+        motors.setMotorDirection(MOTOR_RF, DIR_FWD);
+        motors.setMotorDirection(MOTOR_RB, DIR_BWD);
+        motors.setLeftSpeed(speed);
+        motors.setRightSpeed(speed);
+        break;
+    case JOY_RIGHT:
+        motors.setMotorDirection(MOTOR_LF, DIR_FWD);
+        motors.setMotorDirection(MOTOR_LB, DIR_BWD);
+        motors.setMotorDirection(MOTOR_RF, DIR_BWD);
+        motors.setMotorDirection(MOTOR_RB, DIR_FWD);
+        /*motors.setLeftSpeed(speed);
+        motors.setRightSpeed(speed);*/
+        motors.setMotorSpeed(MOTOR_LF, speed);
+        motors.setMotorSpeed(MOTOR_LB, speed/3);
+        motors.setMotorSpeed(MOTOR_RF, speed);
+        motors.setMotorSpeed(MOTOR_RB, speed/3);
+        break;
+#else
     case JOY_LEFT: motors.turn(speed, DIR_LEFT); break;
     case JOY_RIGHT: motors.turn(speed, DIR_RIGHT); break;
+#endif
     case JOY_TOP: motors.move(speed, DIR_FWD); break;
     case JOY_BOTTOM: motors.move(speed, DIR_BWD); break;
     case JOY_LEFT_TOP:
@@ -118,9 +141,9 @@ void loop()
         if (cbut && zbut)
             speed = 70; // reset
         else if (cbut)
-            speed = min(speed+5, 160);
+            speed = min(speed+5, CMotors::MAX_POWER);
         else if (zbut)
-            speed = max(speed-5, 50);
+            speed = max(speed-5, CMotors::MIN_POWER);
 
         const uint16_t joyx = nunchuck_joyx();
         const uint16_t joyy = nunchuck_joyy();

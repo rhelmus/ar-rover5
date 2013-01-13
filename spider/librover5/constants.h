@@ -66,7 +66,8 @@ enum
 };
 
 // Movement
-#define TRACKED_MOVEMENT
+//#define TRACKED_MOVEMENT
+#define MECANUM_MOVEMENT
 #define ENC_PULSES_CM 18.28
 #define ENC_PULSES_DEG 5.62
 

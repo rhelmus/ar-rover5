@@ -53,13 +53,6 @@ class CRover5Control : public QMainWindow
     QWidget *createCameraWidgets(void);
     QWidget *createDriveWidgets(void);
 
-    QWidget *createTopTabWidget(void);
-    QWidget *createGeneralTab(void);
-    QWidget *createCamViewTab(void);
-    QWidget *createBottomTabWidget(void);
-    QWidget *createDriveTab(void);
-    QWidget *createCamControlTab(void);
-
     void initTcpServer(void);
     bool canSendTcp(void) const;
     void parseTcp(QDataStream &stream);

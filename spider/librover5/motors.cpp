@@ -178,7 +178,7 @@ void CMotors::update()
         stop();
     else if (!distanceReached())
     {
-#ifdef TRACKED_MOVEMENT
+//#ifdef TRACKED_MOVEMENT
         // Assume front & back motors are/want the same
 
         // Left
@@ -215,9 +215,9 @@ void CMotors::update()
 
         if (distanceReached())
             fixedTurning = false;
-#else
-#error "No support for non tracked movement yet"
-#endif
+//#else
+//#error "No support for non tracked movement yet"
+//#endif
     }
 
     for (uint8_t m=0; m<MOTOR_END; ++m)
@@ -240,12 +240,12 @@ void CMotors::update()
             {
                 const uint16_t espeed =
                         abs(encoders.getSpeed(static_cast<EEncoder>(m)));
-                const int16_t diff = espeed - motorData[m].targetEncSpeed;
+                const int16_t diff = motorData[m].targetEncSpeed - espeed;
 
                 if (abs(diff) >= 4)
-                    motorData[m].targetPower -= (diff / 4);
+                    motorData[m].targetPower += (diff / 4);
                 else if (diff != 0)
-                    motorData[m].targetPower += ((diff < 0) ? 1 : -1);
+                    motorData[m].targetPower += ((diff > 0) ? 1 : -1);
 
                 motorData[m].targetPower = constrain(motorData[m].targetPower, MIN_POWER,
                                                      MAX_POWER);

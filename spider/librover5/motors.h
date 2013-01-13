@@ -8,12 +8,20 @@
 
 class CMotors
 {
+public:
     enum
     {
-        MOTOR_CHANGE_INTERVAL = 10,
+#ifdef MECANUM_MOVEMENT
+        MIN_POWER = 20,
+        MAX_POWER = 200
+#else
         MIN_POWER = 50,
         MAX_POWER = 160
+#endif
     };
+
+private:
+    enum { MOTOR_CHANGE_INTERVAL = 10 };
 
     struct SMotor
     {

@@ -274,5 +274,6 @@ void CRemoteInterface::update()
         TWISendInt(roll);
         TWISendInt(heading);
         Wire.endTransmission();
+        Serial.print("heading: "); Serial.println(heading);
     }
 }

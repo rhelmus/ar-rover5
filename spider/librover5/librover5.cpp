@@ -24,17 +24,6 @@ void initRover5()
     pinMode(PIN_RELAY, OUTPUT);
     digitalWrite(PIN_RELAY, HIGH);
 
-#if 0
-    pinMode(PIN_LED_GREEN, OUTPUT);
-    pinMode(PIN_LED_RED, OUTPUT);
-    pinMode(PIN_LED_YELLOW, OUTPUT);
-
-    digitalWrite(PIN_LED_GREEN, HIGH);
-    digitalWrite(PIN_LED_RED, HIGH);
-    digitalWrite(PIN_LED_YELLOW, HIGH);
-#endif
-
-
     encoders.init();
     motors.init();
     sevenSeg.init();
@@ -54,12 +43,6 @@ void initRover5()
     compass.m_min.x = -414; compass.m_min.y = -809; compass.m_min.z = -391;
     compass.m_max.x = 520; compass.m_max.y = 212; compass.m_max.z = 632;
     compass.setTimeout(100);
-#endif
-
-#if 0
-    Wire.beginTransmission(BRIDGE_TWI_ADDRESS);
-    Wire.write(120); Wire.write(10); Wire.write(210);
-    Wire.endTransmission();
 #endif
 }
 
@@ -91,45 +74,17 @@ void rover5Task()
                 ;*/
         }
 
-        /*Serial.print("left-back: "); Serial.println(curLB, DEC);
-        Serial.print("left-front: "); Serial.println(curLF, DEC);
-        Serial.print("right-back: "); Serial.println(curRB, DEC);
-        Serial.print("right-front: "); Serial.println(curRF, DEC);*/
-
-#if 0
-        Serial.print("Sharp IR: "); Serial.println(getSharpIRDistance(), DEC);
-
-        Serial.print("sharp-left: "); Serial.println(analogRead(PIN_SHARP_IR_LEFT), DEC);
-        Serial.print("sharp-left-fw: "); Serial.println(analogRead(PIN_SHARP_IR_LEFT_FW), DEC);
-        Serial.print("sharp-fw: "); Serial.println(analogRead(PIN_SHARP_IR_FW), DEC);
-        Serial.print("sharp-right: "); Serial.println(analogRead(PIN_SHARP_IR_RIGHT), DEC);
-        Serial.print("sharp-right-fw: "); Serial.println(analogRead(PIN_SHARP_IR_RIGHT_FW), DEC);
-#endif
-
-        for (uint8_t i=0; i<SHARPIR_END; ++i)
-        {
-            Serial.print("SIR "); Serial.print(i, DEC); Serial.print(": ");
-            Serial.println(sharpIR[i].getDistance());
-        }
-
         /*servo.write(spos);
         if (spos >= 180)
             spos = 0;
         else
             spos += 15;*/
 
-#if 0
-        compass.read();
-        int heading = compass.heading((LSM303::vector){0,-1,0});
-        Serial.println(heading);
-        sevenSeg.setVal(heading);
-#else
         if (motors.isEnabled())
         {
             const uint16_t batadc = analogRead(PIN_BATTERY);
             sevenSeg.setVal(static_cast<float>(batadc) / 1024.0 * 5.0 * 2.0, 2);
         }
-#endif
 
         ADCCheckDelay = curtime + 400;
     }
