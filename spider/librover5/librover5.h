@@ -9,6 +9,7 @@
 #include "encoders.h"
 #include "motors.h"
 #include "remoteinterface.h"
+#include "shiftregister.h"
 #include "sharpir.h"
 
 class Servo;

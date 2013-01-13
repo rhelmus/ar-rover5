@@ -19,3 +19,5 @@ sharpir.cpp
 remoteinterface.h
 remoteinterface.cpp
 ../../shared/shared.h
+shiftregister.h
+shiftregister.cpp

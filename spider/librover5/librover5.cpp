@@ -26,6 +26,7 @@ void initRover5()
 
     encoders.init();
     motors.init();
+    shiftRegister.init();
     sevenSeg.init();
 
     Timer1.initialize(200000); // Every 200 ms

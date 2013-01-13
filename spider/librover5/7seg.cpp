@@ -1,5 +1,6 @@
 #include "7seg.h"
 #include "constants.h"
+#include "shiftregister.h"
 
 #include <Arduino.h>
 
@@ -11,46 +12,30 @@ void C7Seg::drawSegments(uint8_t d)
 
     switch (d)
     {
-    case 0: dpin = PIN_7SEG_D1; break;
-    case 1: dpin = PIN_7SEG_D2; break;
-    case 2: dpin = PIN_7SEG_D3; break;
-    case 3: dpin = PIN_7SEG_D4; break;
+        case 0: dpin = PIN_7SEG_D1; break;
+        case 1: dpin = PIN_7SEG_D2; break;
+        case 2: dpin = PIN_7SEG_D3; break;
+        case 3: dpin = PIN_7SEG_D4; break;
     }
 
-    digitalWrite(PIN_7SEG_A, (digits[d].a) ? LOW : HIGH);
-    digitalWrite(PIN_7SEG_B, (digits[d].b) ? LOW : HIGH);
-    digitalWrite(PIN_7SEG_C, (digits[d].c) ? LOW : HIGH);
-    digitalWrite(PIN_7SEG_D, (digits[d].d) ? LOW : HIGH);
-    digitalWrite(PIN_7SEG_E, (digits[d].e) ? LOW : HIGH);
-    digitalWrite(PIN_7SEG_F, (digits[d].f) ? LOW : HIGH);
-    digitalWrite(PIN_7SEG_G, (digits[d].g) ? LOW : HIGH);
-    digitalWrite(PIN_7SEG_DEC, (digits[d].dec) ? LOW : HIGH);
+    shiftRegister.set(PIN_7SEG_A, (digits[d].a) ? LOW : HIGH);
+    shiftRegister.set(PIN_7SEG_B, (digits[d].b) ? LOW : HIGH);
+    shiftRegister.set(PIN_7SEG_C, (digits[d].c) ? LOW : HIGH);
+    shiftRegister.set(PIN_7SEG_D, (digits[d].d) ? LOW : HIGH);
+    shiftRegister.set(PIN_7SEG_E, (digits[d].e) ? LOW : HIGH);
+    shiftRegister.set(PIN_7SEG_F, (digits[d].f) ? LOW : HIGH);
+    shiftRegister.set(PIN_7SEG_G, (digits[d].g) ? LOW : HIGH);
+    shiftRegister.set(PIN_7SEG_DEC, (digits[d].dec) ? LOW : HIGH);
 
-    digitalWrite(dpin, HIGH);
+    shiftRegister.set(dpin, HIGH);
+    shiftRegister.apply();
     delayMicroseconds(50);
-    digitalWrite(dpin, LOW);
+    shiftRegister.set(dpin, LOW);
+    shiftRegister.apply();
 }
 
 void C7Seg::init()
 {
-    pinMode(PIN_7SEG_A, OUTPUT);
-    pinMode(PIN_7SEG_B, OUTPUT);
-    pinMode(PIN_7SEG_C, OUTPUT);
-    pinMode(PIN_7SEG_D, OUTPUT);
-    pinMode(PIN_7SEG_E, OUTPUT);
-    pinMode(PIN_7SEG_F, OUTPUT);
-    pinMode(PIN_7SEG_G, OUTPUT);
-    pinMode(PIN_7SEG_DEC, OUTPUT);
-    pinMode(PIN_7SEG_D1, OUTPUT);
-    pinMode(PIN_7SEG_D2, OUTPUT);
-    pinMode(PIN_7SEG_D3, OUTPUT);
-    pinMode(PIN_7SEG_D4, OUTPUT);
-
-    digitalWrite(PIN_7SEG_D1, LOW);
-    digitalWrite(PIN_7SEG_D2, LOW);
-    digitalWrite(PIN_7SEG_D3, LOW);
-    digitalWrite(PIN_7SEG_D4, LOW);
-
     clear();
 }
 

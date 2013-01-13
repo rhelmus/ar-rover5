@@ -37,20 +37,24 @@ enum
     PIN_ENC_RF_SIGN2 = 38,
     INT_ENC_RF = 1,
 
-    // 4 digit 7 segment display
-    PIN_7SEG_D1 = 39,
-    PIN_7SEG_D2 = 40,
-    PIN_7SEG_D3 = 41,
-    PIN_7SEG_D4 = 42,
+    // 595 shift registers
+    PIN_SHIFTREG_SER = 39,
+    PIN_SHIFTREG_RCLK = 40,
+    PIN_SHIFTREG_SRCLK = 41,
 
-    PIN_7SEG_A = 43,
-    PIN_7SEG_B = 44,
-    PIN_7SEG_C = 45,
-    PIN_7SEG_D = 46,
-    PIN_7SEG_E = 47,
-    PIN_7SEG_F = 48,
-    PIN_7SEG_G = 49,
-    PIN_7SEG_DEC = 50,
+    // 4 digit 7 segment display (NOTE: connected to shift registers)
+    PIN_7SEG_D1 = 9,
+    PIN_7SEG_D2 = 10,
+    PIN_7SEG_D3 = 11,
+    PIN_7SEG_D4 = 12,
+    PIN_7SEG_A = 7,
+    PIN_7SEG_B = 4,
+    PIN_7SEG_C = 6,
+    PIN_7SEG_D = 1,
+    PIN_7SEG_E = 2,
+    PIN_7SEG_F = 0,
+    PIN_7SEG_G = 5,
+    PIN_7SEG_DEC = 3,
 
     // Misc
     PIN_RELAY = 30,
