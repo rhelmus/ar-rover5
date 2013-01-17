@@ -67,7 +67,7 @@ void setup()
 void loop()
 {
     static uint32_t updelay;
-    static EMotorDirection ldir = DIR_FWD, rdir = DIR_BWD;
+    static EMotorDirection ldir = MDIR_FWD, rdir = MDIR_BWD;
     static bool running = false;
 
     // Switch pressed? (ie. back to unpressed)
@@ -100,15 +100,15 @@ void loop()
             motors.setLeftDirection(ldir);
             motors.setRightDirection(/*rdir*/ldir);
 
-            if (ldir == DIR_FWD)
+            if (ldir == MDIR_FWD)
             {
-                ldir = DIR_BWD;
-                rdir = DIR_FWD;
+                ldir = MDIR_BWD;
+                rdir = MDIR_FWD;
             }
             else
             {
-                ldir = DIR_FWD;
-                rdir = DIR_BWD;
+                ldir = MDIR_FWD;
+                rdir = MDIR_BWD;
             }
         }
     }

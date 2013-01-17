@@ -298,7 +298,7 @@ void CRover5Control::btMsgReceived(EMessage m, QByteArray data)
     if (m == MSG_MOTOR_TARGETPOWER)
     {
         for (int i=0; i<MOTOR_END; ++i)
-            motorPowerStatW[i]->set(0, data[i]);
+            motorPowerStatW[i]->set(0, (uint8_t)data[i]);
     }
     else if (m == MSG_MOTOR_TARGETSPEED)
     {
@@ -316,12 +316,12 @@ void CRover5Control::btMsgReceived(EMessage m, QByteArray data)
     else if (m == MSG_MOTOR_SETPOWER)
     {
         for (int i=0; i<MOTOR_END; ++i)
-            motorPowerStatW[i]->set(1, data[i]);
+            motorPowerStatW[i]->set(1, (uint8_t)data[i]);
     }
     else if (m == MSG_ENCODER_SPEED)
     {
         for (int i=0; i<ENC_END; ++i)
-            motorSpeedStatW[i]->set(1, bytesToInt(data[i*2], data[i*2+1]));
+            motorSpeedStatW[i]->set(1, (int16_t)bytesToInt(data[i*2], data[i*2+1]));
     }
     else if (m == MSG_ENCODER_DISTANCE)
     {
@@ -351,7 +351,7 @@ void CRover5Control::btMsgReceived(EMessage m, QByteArray data)
     else if (m == MSG_BATTERY)
         batteryStatW->set(0, bytesToInt(data[0], data[1]));
     else if (m == MSG_SERVO)
-        servoPosStatW->set(0, data[0]);
+        servoPosStatW->set(0, (uint8_t)data[0]);
     else if (m == MSG_IMU)
     {
         pitchStatW->set(0, (int16_t)bytesToInt(data[0], data[1]));
@@ -374,19 +374,35 @@ void CRover5Control::applyDriveUpdate(CDriveWidget::DriveFlags dir, int drivespe
         CBTMessage msg(MSG_CMD_STOP);
         btInterface->send(msg);
     }
+#ifdef MECANUM_MOVEMENT
+    else if (dir & CDriveWidget::DRIVE_TRANSLATE)
+    {
+        ETranslateDirection trdir;
+        if (dir & CDriveWidget::DRIVE_FWD)
+            trdir = (dir & CDriveWidget::DRIVE_LEFT) ? TRDIR_LEFT_FWD : TRDIR_RIGHT_FWD;
+        else if (dir & CDriveWidget::DRIVE_BWD)
+            trdir = (dir & CDriveWidget::DRIVE_LEFT) ? TRDIR_LEFT_BWD : TRDIR_RIGHT_BWD;
+        else
+            trdir = (dir & CDriveWidget::DRIVE_LEFT) ? TRDIR_LEFT : TRDIR_RIGHT;
+
+        CBTMessage msg(MSG_CMD_TRANSLATE);
+        msg << (uint8_t)drivespeed << (uint8_t)trdir << (uint16_t)DRIVE_TIME;
+        btInterface->send(msg);
+    }
+#endif
     else if (dir & (CDriveWidget::DRIVE_FWD | CDriveWidget::DRIVE_BWD))
     {
         uint8_t lspeed, rspeed;
-        const EMotorDirection mdir = (dir & CDriveWidget::DRIVE_FWD) ? DIR_FWD : DIR_BWD;
+        const EMotorDirection mdir = (dir & CDriveWidget::DRIVE_FWD) ? MDIR_FWD : MDIR_BWD;
 
-        if (((mdir == DIR_FWD) && (dir & CDriveWidget::DRIVE_LEFT)) ||
-            ((mdir == DIR_BWD) && (dir & CDriveWidget::DRIVE_RIGHT)))
+        if (((mdir == MDIR_FWD) && (dir & CDriveWidget::DRIVE_LEFT)) ||
+            ((mdir == MDIR_BWD) && (dir & CDriveWidget::DRIVE_RIGHT)))
         {
             lspeed = 0;
             rspeed = drivespeed;
         }
-        else if (((mdir == DIR_FWD) && (dir & CDriveWidget::DRIVE_RIGHT)) ||
-                 ((mdir == DIR_BWD) && (dir & CDriveWidget::DRIVE_LEFT)))
+        else if (((mdir == MDIR_FWD) && (dir & CDriveWidget::DRIVE_RIGHT)) ||
+                 ((mdir == MDIR_BWD) && (dir & CDriveWidget::DRIVE_LEFT)))
         {
             lspeed = drivespeed;
             rspeed = 0;
@@ -401,7 +417,7 @@ void CRover5Control::applyDriveUpdate(CDriveWidget::DriveFlags dir, int drivespe
     else // turn
     {
         const ETurnDirection tdir =
-                (dir & CDriveWidget::DRIVE_LEFT) ? DIR_LEFT : DIR_RIGHT;
+                (dir & CDriveWidget::DRIVE_LEFT) ? TDIR_LEFT : TDIR_RIGHT;
 
         CBTMessage msg(MSG_CMD_TURN);
         msg << (uint8_t)drivespeed << (uint8_t)tdir << (uint16_t)DRIVE_TIME;

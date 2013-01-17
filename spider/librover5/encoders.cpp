@@ -14,6 +14,8 @@ volatile uint8_t prevEncReading[ENC_END];
 volatile int16_t encTicks[ENC_END];
 volatile uint32_t encDist[ENC_END];
 
+volatile bool ledon;
+
 void intEncLB(void)
 {
     const uint8_t reading = ((PINC & (1<<PC4)) != 0) * 2 +

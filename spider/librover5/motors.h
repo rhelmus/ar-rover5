@@ -8,31 +8,18 @@
 
 class CMotors
 {
-public:
-    enum
-    {
-#ifdef MECANUM_MOVEMENT
-        MIN_POWER = 20,
-        MAX_POWER = 200
-#else
-        MIN_POWER = 50,
-        MAX_POWER = 160
-#endif
-    };
-
-private:
     enum { MOTOR_CHANGE_INTERVAL = 10 };
 
     struct SMotor
     {
-        uint8_t targetPower, setPower;
+        uint8_t requestedPower, targetPower, setPower;
         uint16_t targetEncSpeed;
         uint32_t targetDistance;
         EMotorDirection targetDirection, setDirection;
 
         SMotor(void)
-            : targetPower(0), setPower(0), targetEncSpeed(0), targetDistance(0),
-              targetDirection(DIR_FWD), setDirection(DIR_FWD) { }
+            : requestedPower(0), targetPower(0), setPower(0), targetEncSpeed(0),
+              targetDistance(0), targetDirection(MDIR_FWD), setDirection(MDIR_FWD) { }
     };
 
     volatile SMotor motorData[MOTOR_END];
@@ -64,13 +51,19 @@ public:
 
     void move(uint8_t s, EMotorDirection d)
     { setLeftSpeed(s); setLeftDirection(d); setRightSpeed(s); setRightDirection(d); }
-    void turn(uint8_t s, ETurnDirection d);
     void moveDist(uint8_t s, uint32_t dist, EMotorDirection dir);
     void moveDistCm(uint8_t s, uint16_t cm, EMotorDirection dir)
     { moveDist(s, cm * ENC_PULSES_CM, dir); }
+    void turn(uint8_t s, ETurnDirection d);
     void turnDist(uint8_t s, uint32_t dist, ETurnDirection dir);
     void turnAngle(uint8_t s, uint16_t a, ETurnDirection d)
     { turnDist(s, a * ENC_PULSES_DEG, d); }
+#ifdef MECANUM_MOVEMENT
+    void translateDist(uint8_t s, uint32_t dist, ETranslateDirection dir);
+    void translate(uint8_t s, ETranslateDirection d) { translateDist(s, 0, d); }
+    void translateCm(uint8_t s, uint16_t dist, ETranslateDirection dir)
+    { translateDist(s, dist * ENC_PULSES_CM, dir); } // UNDONE: Calibrate
+#endif
     void setDuration(uint32_t t);
     void stop(void);
     void directStop(void)

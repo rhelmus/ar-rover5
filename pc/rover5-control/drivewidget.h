@@ -19,13 +19,14 @@ public:
         DRIVE_BWD = (1<<1),
         DRIVE_LEFT = (1<<2),
         DRIVE_RIGHT = (1<<3)
+#ifdef MECANUM_MOVEMENT
+        , DRIVE_TRANSLATE = (1<<4)
+#endif
     };
     Q_DECLARE_FLAGS(DriveFlags, EDriveDirection)
 
 private:
     Q_OBJECT
-
-    enum { MIN_POWER = 50, MAX_POWER = 160 };
 
     QComboBox *contDriveModeCombo, *contDriveDurationCombo;
     QSpinBox *contDriveSpinBox;
@@ -64,6 +65,9 @@ class CDriveKeypad : public QWidget
 
     QPushButton *driveButtons[BUTTON_END];
     QTimer *updateTimer;
+#ifdef MECANUM_MOVEMENT
+    bool controlPressed;
+#endif
 
     QPushButton *createDriveButton(const QIcon &icon);
     bool canPressKey(int key) const;

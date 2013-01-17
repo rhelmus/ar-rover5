@@ -56,53 +56,81 @@ void updateMotors(uint8_t speed, EJoyDir dir)
 {
     switch (dir)
     {
+    case JOY_TOP: motors.move(speed, MDIR_FWD); break;
+    case JOY_BOTTOM: motors.move(speed, MDIR_BWD); break;
 #ifdef MECANUM_MOVEMENT
     case JOY_LEFT:
-        motors.setMotorDirection(MOTOR_LF, DIR_BWD);
-        motors.setMotorDirection(MOTOR_LB, DIR_FWD);
-        motors.setMotorDirection(MOTOR_RF, DIR_FWD);
-        motors.setMotorDirection(MOTOR_RB, DIR_BWD);
+        motors.setMotorDirection(MOTOR_LF, MDIR_BWD);
+        motors.setMotorDirection(MOTOR_LB, MDIR_FWD);
+        motors.setMotorDirection(MOTOR_RF, MDIR_FWD);
+        motors.setMotorDirection(MOTOR_RB, MDIR_BWD);
         motors.setLeftSpeed(speed);
         motors.setRightSpeed(speed);
         break;
     case JOY_RIGHT:
-        motors.setMotorDirection(MOTOR_LF, DIR_FWD);
-        motors.setMotorDirection(MOTOR_LB, DIR_BWD);
-        motors.setMotorDirection(MOTOR_RF, DIR_BWD);
-        motors.setMotorDirection(MOTOR_RB, DIR_FWD);
-        /*motors.setLeftSpeed(speed);
-        motors.setRightSpeed(speed);*/
-        motors.setMotorSpeed(MOTOR_LF, speed);
-        motors.setMotorSpeed(MOTOR_LB, speed/3);
+        motors.setMotorDirection(MOTOR_LF, MDIR_FWD);
+        motors.setMotorDirection(MOTOR_LB, MDIR_BWD);
+        motors.setMotorDirection(MOTOR_RF, MDIR_BWD);
+        motors.setMotorDirection(MOTOR_RB, MDIR_FWD);
+        motors.setLeftSpeed(speed);
+        motors.setRightSpeed(speed);
+        break;
+    case JOY_LEFT_TOP:
+        motors.setMotorDirection(MOTOR_LB, MDIR_BWD);
+        motors.setMotorDirection(MOTOR_RF, MDIR_BWD);
+        motors.setMotorSpeed(MOTOR_LF, 0);
+        motors.setMotorSpeed(MOTOR_LB, speed);
         motors.setMotorSpeed(MOTOR_RF, speed);
-        motors.setMotorSpeed(MOTOR_RB, speed/3);
+        motors.setMotorSpeed(MOTOR_RB, 0);
+        break;
+    case JOY_LEFT_BOTTOM:
+        motors.setMotorDirection(MOTOR_LF, MDIR_FWD);
+        motors.setMotorDirection(MOTOR_RB, MDIR_FWD);
+        motors.setMotorSpeed(MOTOR_LF, speed);
+        motors.setMotorSpeed(MOTOR_LB, 0);
+        motors.setMotorSpeed(MOTOR_RF, 0);
+        motors.setMotorSpeed(MOTOR_RB, speed);
+        break;
+    case JOY_RIGHT_TOP:
+        motors.setMotorDirection(MOTOR_LF, MDIR_BWD);
+        motors.setMotorDirection(MOTOR_RB, MDIR_BWD);
+        motors.setMotorSpeed(MOTOR_LF, speed);
+        motors.setMotorSpeed(MOTOR_LB, 0);
+        motors.setMotorSpeed(MOTOR_RF, 0);
+        motors.setMotorSpeed(MOTOR_RB, speed);
+        break;
+    case JOY_RIGHT_BOTTOM:
+        motors.setMotorDirection(MOTOR_LB, MDIR_FWD);
+        motors.setMotorDirection(MOTOR_RF, MDIR_FWD);
+        motors.setMotorSpeed(MOTOR_LF, 0);
+        motors.setMotorSpeed(MOTOR_LB, speed);
+        motors.setMotorSpeed(MOTOR_RF, speed);
+        motors.setMotorSpeed(MOTOR_RB, 0);
         break;
 #else
     case JOY_LEFT: motors.turn(speed, DIR_LEFT); break;
     case JOY_RIGHT: motors.turn(speed, DIR_RIGHT); break;
-#endif
-    case JOY_TOP: motors.move(speed, DIR_FWD); break;
-    case JOY_BOTTOM: motors.move(speed, DIR_BWD); break;
     case JOY_LEFT_TOP:
         motors.setLeftSpeed(0);
         motors.setRightSpeed(speed);
-        motors.setRightDirection(DIR_FWD);
+        motors.setRightDirection(MDIR_FWD);
         break;
     case JOY_LEFT_BOTTOM:
         motors.setLeftSpeed(0);
         motors.setRightSpeed(speed);
-        motors.setRightDirection(DIR_BWD);
+        motors.setRightDirection(MDIR_BWD);
         break;
     case JOY_RIGHT_TOP:
         motors.setLeftSpeed(speed);
-        motors.setLeftDirection(DIR_FWD);
+        motors.setLeftDirection(MDIR_FWD);
         motors.setRightSpeed(0);
         break;
     case JOY_RIGHT_BOTTOM:
         motors.setLeftSpeed(speed);
-        motors.setLeftDirection(DIR_BWD);
+        motors.setLeftDirection(MDIR_BWD);
         motors.setRightSpeed(0);
         break;
+#endif
     case JOY_NONE: motors.stop(); break;
     }
 }
@@ -141,9 +169,9 @@ void loop()
         if (cbut && zbut)
             speed = 70; // reset
         else if (cbut)
-            speed = min(speed+5, CMotors::MAX_POWER);
+            speed = min(speed+5, MAX_MOTOR_POWER);
         else if (zbut)
-            speed = max(speed-5, CMotors::MIN_POWER);
+            speed = max(speed-5, MIN_MOTOR_POWER);
 
         const uint16_t joyx = nunchuck_joyx();
         const uint16_t joyy = nunchuck_joyy();

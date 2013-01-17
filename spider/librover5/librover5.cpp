@@ -75,6 +75,14 @@ void rover5Task()
                 ;*/
         }
 
+        for (uint8_t e=0; e<ENC_END; ++e)
+        {
+            const uint16_t espeed = abs(encoders.getSpeed((EEncoder)e));
+            const int16_t diff = motors.getTargetSpeed((EMotor)e) - espeed;
+            Serial.print("enc speed "); Serial.print(e, DEC);
+            Serial.print(": "); Serial.println(diff);
+        }
+
         /*servo.write(spos);
         if (spos >= 180)
             spos = 0;

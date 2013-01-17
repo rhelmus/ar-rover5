@@ -17,13 +17,16 @@ namespace {
 struct SMotorControl
 {
     bool update;
-    bool turn;
+    enum { MOVE_STRAIGHT, MOVE_TURN, MOVE_TRANSLATE, MOVE_NONE } moveType;
 
     union
     {
         uint8_t leftSpeed;
         uint8_t driveSpeed;
         uint8_t turnSpeed;
+#ifdef MECANUM_MOVEMENT
+        uint8_t translateSpeed;
+#endif
     };
     uint8_t rightSpeed;
 
@@ -32,6 +35,9 @@ struct SMotorControl
         EMotorDirection mdirLeft;
         EMotorDirection driveDir;
         ETurnDirection turnDir;
+#ifdef MECANUM_MOVEMENT
+        ETranslateDirection translateDir;
+#endif
     };
     EMotorDirection mdirRight;
 
@@ -103,7 +109,7 @@ void TWIReceiveCB(int bytes)
         motorControl.mdirRight = static_cast<EMotorDirection>(Wire.read());
         motorControl.duration = bytesToInt(Wire.read(), Wire.read());
         motorControl.distance = 0;
-        motorControl.turn = false;
+        motorControl.moveType = SMotorControl::MOVE_STRAIGHT;
     }
     else if (msg == MSG_CMD_DRIVEDIST)
     {
@@ -112,7 +118,7 @@ void TWIReceiveCB(int bytes)
         motorControl.distance = bytesToInt(Wire.read(), Wire.read());
         motorControl.driveDir = static_cast<EMotorDirection>(Wire.read());
         motorControl.duration = 0;
-        motorControl.turn = false;
+        motorControl.moveType = SMotorControl::MOVE_STRAIGHT;
     }
     else if (msg == MSG_CMD_TURN)
     {
@@ -120,7 +126,7 @@ void TWIReceiveCB(int bytes)
         motorControl.turnSpeed = Wire.read();
         motorControl.turnDir = static_cast<ETurnDirection>(Wire.read());
         motorControl.duration = bytesToInt(Wire.read(), Wire.read());
-        motorControl.turn = true;
+        motorControl.moveType = SMotorControl::MOVE_TURN;
         motorControl.angle = 0;
     }
     else if (msg == MSG_CMD_TURNANGLE)
@@ -130,13 +136,32 @@ void TWIReceiveCB(int bytes)
         motorControl.angle = bytesToInt(Wire.read(), Wire.read());
         motorControl.turnDir = static_cast<ETurnDirection>(Wire.read());
         motorControl.duration = 0;
-        motorControl.turn = true;
+        motorControl.moveType = SMotorControl::MOVE_TURN;
     }
+#ifdef MECANUM_MOVEMENT
+    else if (msg == MSG_CMD_TRANSLATE)
+    {
+        motorControl.update = true;
+        motorControl.translateSpeed = Wire.read();
+        motorControl.translateDir = static_cast<ETranslateDirection>(Wire.read());
+        motorControl.duration = bytesToInt(Wire.read(), Wire.read());
+        motorControl.moveType = SMotorControl::MOVE_TRANSLATE;
+        motorControl.distance = 0;
+    }
+    else if (msg == MSG_CMD_TRANSLATEDIST)
+    {
+        motorControl.update = true;
+        motorControl.translateSpeed = Wire.read();
+        motorControl.distance = bytesToInt(Wire.read(), Wire.read());
+        motorControl.translateDir = static_cast<ETranslateDirection>(Wire.read());
+        motorControl.duration = 0;
+        motorControl.moveType = SMotorControl::MOVE_TRANSLATE;
+    }
+#endif
     else if (msg == MSG_CMD_STOP)
     {
         motorControl.update = true;
-        motorControl.leftSpeed = motorControl.rightSpeed = 0;
-        motorControl.turn = false;
+        motorControl.moveType = SMotorControl::MOVE_NONE;
     }
     else // Unknown message
     {
@@ -159,43 +184,11 @@ void CRemoteInterface::init()
 
 void CRemoteInterface::update()
 {
-    const uint32_t curtime = millis();
-    if (curtime > reqUpdateDelay)
-    {
-        reqUpdateDelay = curtime + 100;
-
-#if 0
-        TWIRequest(MSG_REQBTDATAN, 1);
-        const uint8_t msgcount = Wire.read();
-        for (uint8_t i=0; i<msgcount; ++i)
-        {
-            const uint8_t bytes = TWIRequest(MSG_REQBTMSG, BRIDGE_MAX_REQSIZE);
-            parseBTMsg(static_cast<EMessage>(Wire.read()));
-        }
-#endif
-
-//        Serial.print("Pong: "); Serial.println(pingTime);
-    }
-
     if (motorControl.update)
     {
-        if (motorControl.turn)
+        if (motorControl.moveType == SMotorControl::MOVE_STRAIGHT)
         {
-            if (!motorControl.angle)
-            {
-                motors.turn(motorControl.turnSpeed, motorControl.turnDir);
-                if (motorControl.duration)
-                    motors.setDuration(motorControl.duration * 1000);
-            }
-            else
-                motors.turnAngle(motorControl.turnSpeed, motorControl.angle,
-                                 motorControl.turnDir);
-        }
-        else
-        {
-            if (!motorControl.leftSpeed && !motorControl.rightSpeed)
-                motors.stop();
-            else if (!motorControl.distance)
+            if (!motorControl.distance)
             {
                 motors.setLeftDirection(motorControl.mdirLeft);
                 motors.setRightDirection(motorControl.mdirRight);
@@ -210,9 +203,37 @@ void CRemoteInterface::update()
                                   motorControl.driveDir);
             }
         }
+        else if (motorControl.moveType == SMotorControl::MOVE_TURN)
+        {
+            if (!motorControl.angle)
+            {
+                motors.turn(motorControl.turnSpeed, motorControl.turnDir);
+                if (motorControl.duration)
+                    motors.setDuration(motorControl.duration * 1000);
+            }
+            else
+                motors.turnAngle(motorControl.turnSpeed, motorControl.angle,
+                                 motorControl.turnDir);
+        }
+        else if (motorControl.moveType == SMotorControl::MOVE_TRANSLATE)
+        {
+            if (!motorControl.distance)
+            {
+                motors.translate(motorControl.translateSpeed, motorControl.translateDir);
+                if (motorControl.duration)
+                    motors.setDuration(motorControl.duration * 1000);
+            }
+            else
+                motors.translateCm(motorControl.translateSpeed, motorControl.distance,
+                                   motorControl.translateDir);
+        }
+        else // MOVE_NONE
+            motors.stop();
+
         motorControl.update = false;
     }
 
+    const uint32_t curtime = millis();
     if (curtime > statusSendDelay)
     {
         statusSendDelay = curtime + 500;

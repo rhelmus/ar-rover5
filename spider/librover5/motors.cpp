@@ -26,16 +26,16 @@ void CMotors::setEffMotorDirection(EMotor m, EMotorDirection d)
     switch (m)
     {
     case MOTOR_LB:
-        digitalWrite(PIN_MOTOR_LB_DIR, (d == DIR_FWD));
+        digitalWrite(PIN_MOTOR_LB_DIR, (d == MDIR_FWD));
         break;
     case MOTOR_LF:
-        digitalWrite(PIN_MOTOR_LF_DIR, (d != DIR_FWD));
+        digitalWrite(PIN_MOTOR_LF_DIR, (d != MDIR_FWD));
         break;
     case MOTOR_RB:
-        digitalWrite(PIN_MOTOR_RB_DIR, (d == DIR_FWD));
+        digitalWrite(PIN_MOTOR_RB_DIR, (d == MDIR_FWD));
         break;
     case MOTOR_RF:
-        digitalWrite(PIN_MOTOR_RF_DIR, (d != DIR_FWD));
+        digitalWrite(PIN_MOTOR_RF_DIR, (d != MDIR_FWD));
         break;
     }
 
@@ -54,7 +54,7 @@ void CMotors::init()
     pinMode(PIN_MOTOR_RF_DIR, OUTPUT);
 
     for (uint8_t m=0; m<MOTOR_END; ++m)
-        setEffMotorDirection(static_cast<EMotor>(m), DIR_FWD);
+        setEffMotorDirection(static_cast<EMotor>(m), MDIR_FWD);
 }
 
 void CMotors::enable()
@@ -73,31 +73,30 @@ void CMotors::disable()
 
 void CMotors::setMotorSpeed(EMotor m, uint8_t s)
 {
-    if (s < MIN_POWER)
+    if (motorData[m].requestedPower == s)
+        return;
+
+    if (s < MIN_MOTOR_POWER)
     {
-        motorData[m].targetPower = 0;
+        motorData[m].requestedPower = motorData[m].targetPower = 0;
         motorData[m].targetEncSpeed = 0;
     }
     else
     {
-        motorData[m].targetPower = min(s, MAX_POWER);
+        motorData[m].requestedPower = motorData[m].targetPower = min(s, MAX_MOTOR_POWER);
 
         // Rough linear correlation between PWM and encoder speed
+#ifdef MECANUM_MOVEMENT
+        motorData[m].targetEncSpeed = motorData[m].targetPower / 2 + 27;
+#else
         motorData[m].targetEncSpeed = motorData[m].targetPower / 2 + 14;
+#endif
     }
 }
 
 void CMotors::setMotorDirection(EMotor m, EMotorDirection d)
 {
     motorData[m].targetDirection = d;
-}
-
-void CMotors::turn(uint8_t s, ETurnDirection d)
-{
-    setLeftDirection((d == DIR_LEFT) ? DIR_BWD : DIR_FWD);
-    setRightDirection((d == DIR_RIGHT) ? DIR_BWD : DIR_FWD);
-    setLeftSpeed(s);
-    setRightSpeed(s);
 }
 
 void CMotors::moveDist(uint8_t s, uint32_t dist, EMotorDirection dir)
@@ -112,6 +111,14 @@ void CMotors::moveDist(uint8_t s, uint32_t dist, EMotorDirection dir)
     encoders.resetDist();
 }
 
+void CMotors::turn(uint8_t s, ETurnDirection d)
+{
+    setLeftDirection((d == TDIR_LEFT) ? MDIR_BWD : MDIR_FWD);
+    setRightDirection((d == TDIR_RIGHT) ? MDIR_BWD : MDIR_FWD);
+    setLeftSpeed(s);
+    setRightSpeed(s);
+}
+
 void CMotors::turnDist(uint8_t s, uint32_t dist, ETurnDirection dir)
 {
     for (uint8_t m=0; m<MOTOR_END; ++m)
@@ -120,10 +127,10 @@ void CMotors::turnDist(uint8_t s, uint32_t dist, ETurnDirection dir)
 
         if ((m == MOTOR_LB) || (m == MOTOR_LF))
             setMotorDirection(static_cast<EMotor>(m),
-                              (dir == DIR_LEFT) ? DIR_BWD : DIR_FWD);
+                              (dir == TDIR_LEFT) ? MDIR_BWD : MDIR_FWD);
         else
             setMotorDirection(static_cast<EMotor>(m),
-                              (dir == DIR_LEFT) ? DIR_FWD : DIR_BWD);
+                              (dir == TDIR_LEFT) ? MDIR_FWD : MDIR_BWD);
 
         setMotorSpeed(static_cast<EMotor>(m), s);
     }
@@ -131,6 +138,44 @@ void CMotors::turnDist(uint8_t s, uint32_t dist, ETurnDirection dir)
     fixedTurning = true;
     encoders.resetDist();
 }
+
+#ifdef MECANUM_MOVEMENT
+
+void CMotors::translateDist(uint8_t s, uint32_t dist, ETranslateDirection dir)
+{
+    if ((dir == TRDIR_LEFT) || (dir == TRDIR_LEFT_FWD) || (dir == TRDIR_LEFT_BWD))
+    {
+        motors.setMotorDirection(MOTOR_LF, MDIR_BWD);
+        motors.setMotorDirection(MOTOR_LB, MDIR_FWD);
+        motors.setMotorDirection(MOTOR_RF, MDIR_FWD);
+        motors.setMotorDirection(MOTOR_RB, MDIR_BWD);
+        motors.setMotorSpeed(MOTOR_LF, (dir != TRDIR_LEFT_FWD) ? s : 0);
+        motors.setMotorSpeed(MOTOR_LB, (dir != TRDIR_LEFT_BWD) ? s : 0);
+        motors.setMotorSpeed(MOTOR_RF, (dir != TRDIR_LEFT_BWD) ? s : 0);
+        motors.setMotorSpeed(MOTOR_RB, (dir != TRDIR_LEFT_FWD) ? s : 0);
+    }
+    else
+    {
+        motors.setMotorDirection(MOTOR_LF, MDIR_FWD);
+        motors.setMotorDirection(MOTOR_LB, MDIR_BWD);
+        motors.setMotorDirection(MOTOR_RF, MDIR_BWD);
+        motors.setMotorDirection(MOTOR_RB, MDIR_FWD);
+        motors.setMotorSpeed(MOTOR_LF, (dir != TRDIR_LEFT_BWD) ? s : 0);
+        motors.setMotorSpeed(MOTOR_LB, (dir != TRDIR_LEFT_FWD) ? s : 0);
+        motors.setMotorSpeed(MOTOR_RF, (dir != TRDIR_LEFT_FWD) ? s : 0);
+        motors.setMotorSpeed(MOTOR_RB, (dir != TRDIR_LEFT_BWD) ? s : 0);
+    }
+
+    if (dist != 0)
+    {
+        for (uint8_t m=0; m<MOTOR_END; ++m)
+            motorData[m].targetDistance = dist;
+
+        encoders.resetDist();
+    }
+}
+
+#endif
 
 void CMotors::setDuration(uint32_t t)
 {
@@ -194,7 +239,7 @@ void CMotors::update()
             }
             else if (!fixedTurning &&
                      dist >= (motorData[MOTOR_LB].targetDistance - (motorData[MOTOR_LB].targetEncSpeed*3)))
-                setLeftSpeed(max(motorData[MOTOR_LB].targetPower/2, MIN_POWER));
+                setLeftSpeed(max(motorData[MOTOR_LB].targetPower/2, MIN_MOTOR_POWER));
         }
 
         // Right
@@ -210,7 +255,7 @@ void CMotors::update()
             }
             else if (!fixedTurning &&
                      dist >= (motorData[MOTOR_RB].targetDistance - (motorData[MOTOR_RB].targetEncSpeed*3)))
-                setRightSpeed(max(motorData[MOTOR_RB].targetPower/2, MIN_POWER));
+                setRightSpeed(max(motorData[MOTOR_RB].targetPower/2, MIN_MOTOR_POWER));
         }
 
         if (distanceReached())
@@ -227,7 +272,7 @@ void CMotors::update()
             if (motorData[m].setPower == 0)
                 setEffMotorDirection(static_cast<EMotor>(m),
                                      motorData[m].targetDirection);
-            else if (motorData[m].setPower < MIN_POWER)
+            else if (motorData[m].setPower < MIN_MOTOR_POWER)
                 setEffMotorSpeed(static_cast<EMotor>(m), 0);
             else
                 setEffMotorSpeed(static_cast<EMotor>(m),
@@ -247,8 +292,8 @@ void CMotors::update()
                 else if (diff != 0)
                     motorData[m].targetPower += ((diff > 0) ? 1 : -1);
 
-                motorData[m].targetPower = constrain(motorData[m].targetPower, MIN_POWER,
-                                                     MAX_POWER);
+                motorData[m].targetPower = constrain(motorData[m].targetPower, MIN_MOTOR_POWER,
+                                                     MAX_MOTOR_POWER);
             }
 
             if (motorData[m].targetPower != motorData[m].setPower)

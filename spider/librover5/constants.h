@@ -8,8 +8,8 @@ enum
     PIN_MOTOR_LB_DIR = 6,
     PIN_MOTOR_LB_CUR = 2,
 
-    PIN_MOTOR_LF_PWM = 3,
-    PIN_MOTOR_LF_DIR = 4,
+    PIN_MOTOR_LF_PWM = 4,
+    PIN_MOTOR_LF_DIR = 11,
     PIN_MOTOR_LF_CUR = 3,
 
     PIN_MOTOR_RB_PWM = 9,
@@ -70,8 +70,6 @@ enum
 };
 
 // Movement
-//#define TRACKED_MOVEMENT
-#define MECANUM_MOVEMENT
 #define ENC_PULSES_CM 18.28
 #define ENC_PULSES_DEG 5.62
 

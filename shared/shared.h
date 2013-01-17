@@ -23,6 +23,8 @@ enum EMessage
     MSG_CMD_DRIVEDIST,
     MSG_CMD_TURN,
     MSG_CMD_TURNANGLE,
+    MSG_CMD_TRANSLATE,
+    MSG_CMD_TRANSLATEDIST,
     MSG_CMD_STOP,
 
     // Messages between phone and control
@@ -53,6 +55,20 @@ enum
     BRIDGE_MAX_REQSIZE = 16
 };
 
+//#define TRACKED_MOVEMENT
+#define MECANUM_MOVEMENT
+
+enum
+{
+#ifdef MECANUM_MOVEMENT
+    MIN_MOTOR_POWER = 20,
+    MAX_MOTOR_POWER = 200
+#else
+    MIN_MOTOR_POWER = 50,
+    MAX_MOTOR_POWER = 160
+#endif
+};
+
 enum EMotor
 {
     MOTOR_LB=0,
@@ -62,8 +78,20 @@ enum EMotor
     MOTOR_END
 };
 
-enum EMotorDirection { DIR_FWD, DIR_BWD };
-enum ETurnDirection { DIR_LEFT, DIR_RIGHT };
+enum EMotorDirection { MDIR_FWD, MDIR_BWD };
+enum ETurnDirection { TDIR_LEFT, TDIR_RIGHT };
+
+#ifdef MECANUM_MOVEMENT
+enum ETranslateDirection
+{
+    TRDIR_LEFT,
+    TRDIR_LEFT_FWD,
+    TRDIR_LEFT_BWD,
+    TRDIR_RIGHT,
+    TRDIR_RIGHT_FWD,
+    TRDIR_RIGHT_BWD
+};
+#endif
 
 enum EEncoder { ENC_LB=0, ENC_LF, ENC_RB, ENC_RF, ENC_END };
 

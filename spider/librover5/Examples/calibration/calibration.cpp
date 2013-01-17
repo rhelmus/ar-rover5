@@ -84,7 +84,7 @@ void loop()
             Serial.print("Battery: "); Serial.println(analogRead(PIN_BATTERY), DEC);
 #if 1
 #ifdef CALIB_FORWARD
-            motors.moveDistCm(RUN_SPEED, RUN_DIST, DIR_FWD);
+            motors.moveDistCm(RUN_SPEED, RUN_DIST, MDIR_FWD);
 #elif defined(CALIB_TURN_LEFT)
 //            motors.turnAngle(RUN_SPEED, 180, DIR_LEFT);
 #elif defined(CALIB_TURN_RIGHT)

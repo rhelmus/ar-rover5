@@ -82,11 +82,13 @@ QWidget *CDriveWidget::createSpeedWidget()
     vbox->addWidget(label);
 
     QSlider *slider = new QSlider(Qt::Vertical);
-    slider->setRange(MIN_POWER, MAX_POWER);
+    slider->setRange(MIN_MOTOR_POWER, MAX_MOTOR_POWER);
+    slider->setValue(70);
     vbox->addWidget(slider, 0, Qt::AlignHCenter);
 
     vbox->addWidget(motorPowerSpinBox = new QSpinBox);
-    motorPowerSpinBox->setRange(MIN_POWER, MAX_POWER);
+    motorPowerSpinBox->setRange(MIN_MOTOR_POWER, MAX_MOTOR_POWER);
+    motorPowerSpinBox->setValue(slider->value());
 
     connect(slider, SIGNAL(valueChanged(int)), motorPowerSpinBox, SLOT(setValue(int)));
     connect(motorPowerSpinBox, SIGNAL(valueChanged(int)), slider, SLOT(setValue(int)));
@@ -125,7 +127,7 @@ void CDriveWidget::sendContDrive()
     if (contDriveModeCombo->currentIndex() < 2) // Drive FWD/BWD
     {
         const EMotorDirection dir =
-                (contDriveModeCombo->currentIndex() == 0) ? DIR_FWD : DIR_BWD;
+                (contDriveModeCombo->currentIndex() == 0) ? MDIR_FWD : MDIR_BWD;
 
         if (contDriveDurationCombo->currentIndex() == 0) // continuous
             emit driveContReq(motorPowerSpinBox->value(), 0, dir);
@@ -138,7 +140,7 @@ void CDriveWidget::sendContDrive()
     else // Rotate left/right
     {
         const ETurnDirection dir =
-                (contDriveModeCombo->currentIndex() == 2) ? DIR_LEFT : DIR_RIGHT;
+                (contDriveModeCombo->currentIndex() == 2) ? TDIR_LEFT : TDIR_RIGHT;
 
         if (contDriveDurationCombo->currentIndex() == 0) // continuous
             emit turnContReq(motorPowerSpinBox->value(), 0, dir);
@@ -161,6 +163,9 @@ void CDriveWidget::keyPressEvent(QKeyEvent *event)
 
 
 CDriveKeypad::CDriveKeypad(QWidget *parent) : QWidget(parent)
+#ifdef MECANUM_MOVEMENT
+    , controlPressed(false)
+#endif
 {
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     setFocusPolicy(Qt::StrongFocus);
@@ -182,6 +187,7 @@ CDriveKeypad::CDriveKeypad(QWidget *parent) : QWidget(parent)
     driveButtons[BUTTON_RIGHT] =
             createDriveButton(style()->standardIcon(QStyle::SP_ArrowRight));
     grid->addWidget(driveButtons[BUTTON_RIGHT], 1, 2);
+
 
     // Make sure buttons don't steal (keyboard) focus
     for (int i=0; i<BUTTON_END; ++i)
@@ -216,7 +222,7 @@ bool CDriveKeypad::canPressKey(int key) const
 
 void CDriveKeypad::updateDriveDir()
 {
-    CDriveWidget::DriveFlags dir =CDriveWidget:: DRIVE_NONE;
+    CDriveWidget::DriveFlags dir = CDriveWidget::DRIVE_NONE;
 
     if (driveButtons[BUTTON_FWD]->isDown())
         dir |= CDriveWidget::DRIVE_FWD;
@@ -226,6 +232,10 @@ void CDriveKeypad::updateDriveDir()
         dir |= CDriveWidget::DRIVE_LEFT;
     if (driveButtons[BUTTON_RIGHT]->isDown())
         dir |= CDriveWidget::DRIVE_RIGHT;
+#ifdef MECANUM_MOVEMENT
+    if (controlPressed && (dir != CDriveWidget::DRIVE_NONE))
+        dir |= CDriveWidget::DRIVE_TRANSLATE;
+#endif
 
     emit driveUpdate(dir);
 
@@ -239,6 +249,10 @@ void CDriveKeypad::keyPressEvent(QKeyEvent *event)
 {
     if (!canPressKey(event->key()))
         return;
+
+#ifdef MECANUM_MOVEMENT
+    controlPressed = (event->modifiers() & Qt::ControlModifier);
+#endif
 
     if (event->key() == Qt::Key_Up)
         driveButtons[BUTTON_FWD]->setDown(true);
