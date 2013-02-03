@@ -21,3 +21,6 @@ remoteinterface.cpp
 ../../shared/shared.h
 shiftregister.h
 shiftregister.cpp
+Examples/IRcontrol/CMakeLists.txt
+Examples/IRcontrol/IRcontrol.cpp
+../../shared/IRcontrol.h

@@ -13,7 +13,7 @@ enum
     PIN_MOTOR_LF_CUR = 3,
 
     PIN_MOTOR_RB_PWM = 9,
-    PIN_MOTOR_RB_DIR = 10,
+    PIN_MOTOR_RB_DIR = 12,
     PIN_MOTOR_RB_CUR = 0,
 
     PIN_MOTOR_RF_PWM = 7,
@@ -66,7 +66,8 @@ enum
     PIN_SHARP_IR_RIGHT = 11,
     PIN_SHARP_IR_RIGHT_FW = 12,
     PIN_SERVO = 51,
-    PIN_SWITCH = 22
+    PIN_SWITCH = 22,
+    PIN_FRONTLEDS = 10
 };
 
 // Movement

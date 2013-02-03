@@ -24,6 +24,8 @@ void initRover5()
     pinMode(PIN_RELAY, OUTPUT);
     digitalWrite(PIN_RELAY, HIGH);
 
+    pinMode(PIN_FRONTLEDS, OUTPUT);
+
     encoders.init();
     motors.init();
     shiftRegister.init();
@@ -75,13 +77,13 @@ void rover5Task()
                 ;*/
         }
 
-        for (uint8_t e=0; e<ENC_END; ++e)
+        /*for (uint8_t e=0; e<ENC_END; ++e)
         {
             const uint16_t espeed = abs(encoders.getSpeed((EEncoder)e));
             const int16_t diff = motors.getTargetSpeed((EMotor)e) - espeed;
             Serial.print("enc speed "); Serial.print(e, DEC);
             Serial.print(": "); Serial.println(diff);
-        }
+        }*/
 
         /*servo.write(spos);
         if (spos >= 180)
