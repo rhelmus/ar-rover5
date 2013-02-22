@@ -18,6 +18,13 @@ CRover5Control::CRover5Control(QWidget *parent)
     QToolBar *toolb = addToolBar("toolbar");
     toolb->addAction(QIcon(":/resources/connect.png"), "Toggle BT", this,
                      SLOT(toggleBtConnection()));
+    toolb->addSeparator();
+    toggleFrontLEDsAction = toolb->addAction(QIcon(":/resources/light.png"),
+                                             "Toggle front LEDs", this,
+                                             SLOT(toggleFrontLEDs()));
+//    toggleFrontLEDsAction->setCheckable(true);
+//    toggleFrontLEDsAction->setChecked(false);
+    toggleFrontLEDsAction->setEnabled(false);
 
     QGridLayout *grid = new QGridLayout(cw);
 
@@ -279,14 +286,27 @@ void CRover5Control::toggleBtConnection()
         btInterface->connectBT();
 }
 
+void CRover5Control::toggleFrontLEDs()
+{
+    static bool togglev = false; // UNDONE!
+    CBTMessage msg(MSG_CMD_FRONTLEDS);
+    toggleFrontLEDsAction->toggle(); // UNDONE: Check actual state
+//    msg << (uint8_t)toggleFrontLEDsAction->isChecked();
+    msg << (uint8_t)(togglev = !togglev);
+
+    btInterface->send(msg);
+}
+
 void CRover5Control::btConnected()
 {
+    toggleFrontLEDsAction->setEnabled(true);
     btConnectedStatLabel->setText("BT connected");
     btConnectedStatLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
 }
 
 void CRover5Control::btDisconnected()
 {
+    toggleFrontLEDsAction->setEnabled(false);
     btConnectedStatLabel->setText("BT disconnected");
     btConnectedStatLabel->setFrameStyle(QFrame::Panel | QFrame::Raised);
 }

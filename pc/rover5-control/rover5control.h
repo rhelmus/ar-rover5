@@ -26,6 +26,7 @@ class CRover5Control : public QMainWindow
 
     enum { DRIVE_TIME = 1 };
 
+    QAction *toggleFrontLEDsAction;
     QLabel *btConnectedStatLabel, *tcpConnectedStatLabel;
 
     CScaledPixmapWidget *camWidget;
@@ -62,6 +63,7 @@ private slots:
     void tcpClientDisconnected(QObject *obj);
     void tcpClientHasData(void);
     void toggleBtConnection(void);
+    void toggleFrontLEDs(void);
     void btConnected(void);
     void btDisconnected(void);
     void btMsgReceived(EMessage m, QByteArray data);

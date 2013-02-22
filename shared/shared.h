@@ -26,6 +26,7 @@ enum EMessage
     MSG_CMD_TRANSLATE,
     MSG_CMD_TRANSLATEDIST,
     MSG_CMD_STOP,
+    MSG_CMD_FRONTLEDS,
 
     // Messages between phone and control
     MSG_CAMFRAME,

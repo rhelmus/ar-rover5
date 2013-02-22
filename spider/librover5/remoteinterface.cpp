@@ -163,6 +163,10 @@ void TWIReceiveCB(int bytes)
         motorControl.update = true;
         motorControl.moveType = SMotorControl::MOVE_NONE;
     }
+    else if (msg == MSG_CMD_FRONTLEDS)
+    {
+        digitalWrite(PIN_FRONTLEDS, Wire.read());
+    }
     else // Unknown message
     {
         while (bytes)
