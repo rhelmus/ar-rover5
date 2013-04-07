@@ -5,6 +5,7 @@
 #include <Wire.h>
 
 #include "7seg.h"
+#include "button.h"
 #include "constants.h"
 #include "encoders.h"
 #include "motors.h"

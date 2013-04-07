@@ -91,7 +91,7 @@ void rover5Task()
         else
             spos += 15;*/
 
-        if (motors.isEnabled())
+        //if (motors.isEnabled())
         {
             const uint16_t batadc = analogRead(PIN_BATTERY);
             sevenSeg.setVal(static_cast<float>(batadc) / 1024.0 * 5.0 * 2.0, 2);

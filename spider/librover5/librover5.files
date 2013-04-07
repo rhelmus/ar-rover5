@@ -24,3 +24,11 @@ shiftregister.cpp
 Examples/IRcontrol/CMakeLists.txt
 Examples/IRcontrol/IRcontrol.cpp
 ../../shared/IRcontrol.h
+Examples/beacontest/beacontest.cpp
+Examples/beacontest/CMakeLists.txt
+Examples/wander/wander.cpp
+Examples/wander/CMakeLists.txt
+button.h
+button.cpp
+Examples/wander/robotai.h
+Examples/wander/robotai.cpp
