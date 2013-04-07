@@ -37,7 +37,7 @@ void CRobotAI::think()
             if (((turretd >= 20) && (turretd < 40)) || ((fwd >= 15) && (fwd < 30)) ||
                 ((lfwd >= 15) && (lfwd < 20)) ||((rfwd >= 15) && (rfwd < 20)))
             {
-                motors.turn(80, 180, TURN_LEFT);
+                motors.turnAngle(80, 180, TDIR_LEFT);
                 state = STATE_TURN;
             }
         }

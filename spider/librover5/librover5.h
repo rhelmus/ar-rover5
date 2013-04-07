@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 
+#include "../../shared/shared.h"
 #include "7seg.h"
 #include "button.h"
 #include "constants.h"

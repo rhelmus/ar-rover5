@@ -1,6 +1,8 @@
 #ifndef ROBOTAI_H
 #define ROBOTAI_H
 
+#include <stdint.h>
+
 class CRobotAI
 {
     enum EState { STATE_CRUISE, STATE_BACKOFF, STATE_TURN };

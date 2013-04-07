@@ -14,7 +14,7 @@ CSharpIR sharpIR[SHARPIR_END] =
 };
 
 
-uint8_t CSharpIR::getDistance() const
+uint8_t CSharpIR::getDistReading() const
 {
     const uint16_t adc = analogRead(ADCPin);
 
@@ -24,4 +24,38 @@ uint8_t CSharpIR::getDistance() const
         return (1 / (GP2Y0A21YK_A * adc + GP2Y0A21YK_B)) - GP2Y0A21YK_K;
 
     return (1 / (GP2Y0A02YK_A * adc + GP2Y0A02YK_B)) - GP2Y0A02YK_K;
+}
+
+void CSharpIR::clearReadings()
+{
+    memset(readings, 0, sizeof(readings));
+    readingsIndex = readingsCount = readingsTotal = 0;
+}
+
+uint8_t CSharpIR::getMedianDist() const
+{
+    // UNDONE
+    return 0;
+}
+
+void CSharpIR::update()
+{
+    // rolling data storage based on http://arduino.cc/en/Tutorial/Smoothing
+
+    const uint32_t curtime = millis();
+
+    if (curtime > updateDelay)
+    {
+        updateDelay = curtime + 50;
+
+        readingsTotal -= readings[readingsIndex];
+        readings = getDistReading();
+        readingsTotal += readings[readingsIndex];
+
+        ++readingsTotal;
+        if (readingsTotal >= READINGS_COUNT)
+            readingsTotal = 0;
+
+        ++readingsCount;
+    }
 }
