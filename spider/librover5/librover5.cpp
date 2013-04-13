@@ -102,6 +102,9 @@ void rover5Task()
 
     sevenSeg.update();
     remoteInterface.update();
+
+    for (uint8_t i=0; i<SHARPIR_END; ++i)
+        sharpIR[i].update();
 }
 
 Servo &getServo()

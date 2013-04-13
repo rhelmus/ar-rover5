@@ -234,8 +234,7 @@ void CMotors::update()
             if (dist >= (motorData[MOTOR_LB].targetDistance - motorData[MOTOR_LB].targetEncSpeed))
             {
                 setLeftSpeed(0);
-                motorData[MOTOR_LB].targetDistance =
-                        motorData[MOTOR_LF].targetDistance = 0;
+                motorData[MOTOR_LB].targetDistance = motorData[MOTOR_LF].targetDistance = 0;
             }
             else if (!fixedTurning &&
                      dist >= (motorData[MOTOR_LB].targetDistance - (motorData[MOTOR_LB].targetEncSpeed*3)))
@@ -250,8 +249,7 @@ void CMotors::update()
             if (dist >= (motorData[MOTOR_RB].targetDistance - motorData[MOTOR_RB].targetEncSpeed))
             {
                 setRightSpeed(0);
-                motorData[MOTOR_RB].targetDistance =
-                        motorData[MOTOR_RF].targetDistance = 0;
+                motorData[MOTOR_RB].targetDistance = motorData[MOTOR_RF].targetDistance = 0;
             }
             else if (!fixedTurning &&
                      dist >= (motorData[MOTOR_RB].targetDistance - (motorData[MOTOR_RB].targetEncSpeed*3)))
@@ -301,11 +299,9 @@ void CMotors::update()
                 const int16_t diff = motorData[m].targetPower - motorData[m].setPower;
 
                 if (abs(diff) <= MOTOR_CHANGE_INTERVAL)
-                    setEffMotorSpeed(static_cast<EMotor>(m),
-                                     motorData[m].targetPower);
+                    setEffMotorSpeed(static_cast<EMotor>(m), motorData[m].targetPower);
                 else
-                    setEffMotorSpeed(static_cast<EMotor>(m),
-                                     motorData[m].setPower + (diff / 2));
+                    setEffMotorSpeed(static_cast<EMotor>(m), motorData[m].setPower + (diff / 2));
             }
         }
     }

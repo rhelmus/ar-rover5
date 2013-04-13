@@ -20,6 +20,7 @@ void setup()
     Serial.begin(115200);
 
     initRover5();
+    runButton.init();
     motors.enable();
 
     Serial.println("Initialized");
@@ -33,10 +34,15 @@ void loop()
 
     if (loopdelay < curtime)
     {
+        loopdelay = curtime + 50;
+
+//        Serial.print("hits turret: "); Serial.println(sharpIR[SHARPIR_TURRET].getHitCount());
+
         runButton.update();
 
         if (runButton.wasPressed())
         {
+            Serial.println("Button pressed!");
             runButton.confirmPressed();
 
             running = !running;

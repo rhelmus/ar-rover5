@@ -244,7 +244,7 @@ void CRemoteInterface::update()
 
         TWIStartMessage(MSG_SHARPIR);
         for (uint8_t i=0; i<SHARPIR_END; ++i)
-            Wire.write(sharpIR[i].getDistance());
+            Wire.write(sharpIR[i].getAvgDist());
         Wire.endTransmission();
 
         TWIStartMessage(MSG_MOTOR_TARGETPOWER);

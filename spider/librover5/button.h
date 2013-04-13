@@ -14,6 +14,7 @@ class CButton
 public:
     CButton(uint8_t p) : buttonPin(p), startPressTime(0), pressed(false) { }
 
+    void init(void);
     void update(void);
     bool wasPressed(void) const { return pressed; }
     void confirmPressed(void) { pressed = false; }

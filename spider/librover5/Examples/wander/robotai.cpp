@@ -1,18 +1,36 @@
+#include "../../shared/shared.h"
 #include "robotai.h"
 
 #include <librover5.h>
 
+namespace {
+
+bool sharpIRFoundHit(ESharpIRSensor s)
+{
+    return sharpIR[s].getHitCount() >= (sharpIR[s].getReadingCount() * 0.75);
+}
+
+
+}
+
+
 void CRobotAI::setState(EState s)
 {
+    if (state == s)
+        return;
+
     state = s;
 
     if (s == STATE_CRUISE)
+    {
         motors.move(80, MDIR_FWD);
+        resetSharpIRSensors();
+    }
 }
 
 void CRobotAI::init()
 {
-    state = STATE_CRUISE;
+    setState(STATE_CRUISE);
     checkSharpIRDelay = 0;
 }
 
@@ -23,23 +41,23 @@ void CRobotAI::stop()
 
 void CRobotAI::think()
 {
-    const uint32_t curtime = millis();
-
     if (state == STATE_CRUISE)
     {
-        if (checkSharpIRDelay < curtime)
+        // NOTE: Assume that every sharp sensor has the same reading count
+        if (sharpIR[SHARPIR_TURRET].getReadingCount() >= 3)
         {
-            const uint8_t turretd = sharpIR[SHARPIR_TURRET].getDistance();
-            const uint8_t fwd = sharpIR[SHARPIR_FW].getDistance();
-            const uint8_t lfwd = sharpIR[SHARPIR_LEFT_FW].getDistance();
-            const uint8_t rfwd = sharpIR[SHARPIR_RIGHT_FW].getDistance();
-
-            if (((turretd >= 20) && (turretd < 40)) || ((fwd >= 15) && (fwd < 30)) ||
-                ((lfwd >= 15) && (lfwd < 20)) ||((rfwd >= 15) && (rfwd < 20)))
+            if (sharpIRFoundHit(SHARPIR_TURRET) && (sharpIR[SHARPIR_TURRET].getAvgDist() < 40))
             {
                 motors.turnAngle(80, 180, TDIR_LEFT);
-                state = STATE_TURN;
+                setState(STATE_TURNING);
             }
+
+            resetSharpIRSensors();
         }
+    }
+    else if (state == STATE_TURNING)
+    {
+        if (motors.distanceReached())
+            setState(STATE_CRUISE);
     }
 }

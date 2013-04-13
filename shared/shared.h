@@ -96,7 +96,7 @@ enum ETranslateDirection
 
 enum EEncoder { ENC_LB=0, ENC_LF, ENC_RB, ENC_RF, ENC_END };
 
-enum
+enum ESharpIRSensor
 {
     SHARPIR_TURRET = 0,
     SHARPIR_LEFT,

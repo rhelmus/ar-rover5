@@ -26,16 +26,18 @@ uint8_t CSharpIR::getDistReading() const
     return (1 / (GP2Y0A02YK_A * adc + GP2Y0A02YK_B)) - GP2Y0A02YK_K;
 }
 
+bool CSharpIR::readingIsHit(uint8_t r) const
+{
+    if (model == GP2Y0A21YK)
+        return ((r >= 10) && (r <= 80));
+
+    return ((r >= 20) && (r <= 150));
+}
+
 void CSharpIR::clearReadings()
 {
     memset(readings, 0, sizeof(readings));
-    readingsIndex = readingsCount = readingsTotal = 0;
-}
-
-uint8_t CSharpIR::getMedianDist() const
-{
-    // UNDONE
-    return 0;
+    readingsIndex = readingCount = hitCount = hitDistTotal = 0;
 }
 
 void CSharpIR::update()
@@ -48,14 +50,31 @@ void CSharpIR::update()
     {
         updateDelay = curtime + 50;
 
-        readingsTotal -= readings[readingsIndex];
-        readings = getDistReading();
-        readingsTotal += readings[readingsIndex];
+        if (readingIsHit(readings[readingsIndex]))
+        {
+            --hitCount;
+            hitDistTotal -= readings[readingsIndex];
+        }
 
-        ++readingsTotal;
-        if (readingsTotal >= READINGS_COUNT)
-            readingsTotal = 0;
+        readings[readingsIndex] = getDistReading();
 
-        ++readingsCount;
+        if (readingIsHit(readings[readingsIndex]))
+        {
+            ++hitCount;
+            hitDistTotal += readings[readingsIndex];
+        }
+
+        ++readingsIndex;
+        if (readingsIndex >= READINGS_SIZE)
+            readingsIndex = 0;
+
+        ++readingCount;
     }
+}
+
+
+void resetSharpIRSensors()
+{
+    for (uint8_t i=0; i<SHARPIR_END; ++i)
+        sharpIR[i].clearReadings();
 }
