@@ -5,10 +5,15 @@
 
 class CRobotAI
 {
-    enum EState { STATE_CRUISE, STATE_BACKOFF, STATE_TURNING };
+    enum EState { STATE_CRUISE, STATE_INITTURN, STATE_TURNING };
+    enum
+    {
+        CRUISE_SPEED = 80,
+        TURN_SPEED = 60
+    };
 
     EState state;
-    uint32_t checkSharpIRDelay;
+    uint16_t turnAngle;
 
     void setState(EState s);
 

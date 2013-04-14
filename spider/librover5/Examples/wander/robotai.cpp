@@ -23,15 +23,23 @@ void CRobotAI::setState(EState s)
 
     if (s == STATE_CRUISE)
     {
-        motors.move(80, MDIR_FWD);
+        motors.move(CRUISE_SPEED, MDIR_FWD);
         resetSharpIRSensors();
+    }
+    else if (s == STATE_INITTURN)
+        motors.stop();
+    else if (s == STATE_TURNING)
+    {
+        if (turnAngle > 180)
+            motors.turnAngle(TURN_SPEED, 360 - turnAngle, TDIR_LEFT);
+        else
+            motors.turnAngle(TURN_SPEED, turnAngle, TDIR_RIGHT);
     }
 }
 
 void CRobotAI::init()
 {
     setState(STATE_CRUISE);
-    checkSharpIRDelay = 0;
 }
 
 void CRobotAI::stop()
@@ -46,14 +54,20 @@ void CRobotAI::think()
         // NOTE: Assume that every sharp sensor has the same reading count
         if (sharpIR[SHARPIR_TURRET].getReadingCount() >= 3)
         {
-            if (sharpIRFoundHit(SHARPIR_TURRET) && (sharpIR[SHARPIR_TURRET].getAvgDist() < 40))
+            if ((sharpIRFoundHit(SHARPIR_TURRET) && (sharpIR[SHARPIR_TURRET].getAvgDist() < 40)) ||
+                (sharpIRFoundHit(SHARPIR_FW) && (sharpIR[SHARPIR_FW].getAvgDist() < 40)))
             {
-                motors.turnAngle(80, 180, TDIR_LEFT);
-                setState(STATE_TURNING);
+                turnAngle = 180; // UNDONE
+                setState(STATE_INITTURN);
             }
 
             resetSharpIRSensors();
         }
+    }
+    else if (state == STATE_INITTURN)
+    {
+        if (!encoders.isMoving())
+            setState(STATE_TURNING);
     }
     else if (state == STATE_TURNING)
     {

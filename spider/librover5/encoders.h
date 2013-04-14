@@ -14,6 +14,7 @@ public:
     void update(void);
 
     int16_t getSpeed(EEncoder e) const { return encSpeed[e]; }
+    bool isMoving(void) const;
     uint32_t getDist(EEncoder e) const;
     void resetDist(void);
 };

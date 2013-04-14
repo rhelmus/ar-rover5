@@ -97,6 +97,17 @@ void CEncoders::update()
     }
 }
 
+bool CEncoders::isMoving() const
+{
+    for (uint8_t e=0; e<ENC_END; ++e)
+    {
+        if (encSpeed[e])
+            return false;
+    }
+
+    return true;
+}
+
 uint32_t CEncoders::getDist(EEncoder e) const
 {
     return encDist[e];
