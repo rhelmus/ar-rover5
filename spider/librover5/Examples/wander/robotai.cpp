@@ -37,6 +37,7 @@ void CRobotAI::init()
 void CRobotAI::stop()
 {
     motors.stop();
+    setState(STATE_NONE);
 }
 
 void CRobotAI::think()

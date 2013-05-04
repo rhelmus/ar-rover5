@@ -5,7 +5,7 @@
 
 class CRobotAI
 {
-    enum EState { STATE_CRUISE, STATE_BACKOFF, STATE_TURNING };
+    enum EState { STATE_CRUISE, STATE_BACKOFF, STATE_TURNING, STATE_NONE };
 
     EState state;
     uint32_t checkSharpIRDelay;
@@ -13,7 +13,7 @@ class CRobotAI
     void setState(EState s);
 
 public:
-    CRobotAI(void) { }
+    CRobotAI(void) : state(STATE_NONE) { }
 
     void init(void);
     void stop(void);
