@@ -1,6 +1,8 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
+#include "../../shared/shared.h"
+
 enum
 {
     // Motors
@@ -65,14 +67,21 @@ enum
     PIN_SHARP_IR_FW = 9,
     PIN_SHARP_IR_RIGHT = 11,
     PIN_SHARP_IR_RIGHT_FW = 12,
+    PIN_LDR = 13,
+    PIN_RANDOM = 15,
     PIN_SERVO = 51,
     PIN_SWITCH = 22,
     PIN_FRONTLEDS = 10
 };
 
 // Movement
+#ifdef MECANUM_MOVEMENT
+#define ENC_PULSES_CM 20.18
+#define ENC_PULSES_DEG 6.93
+#else
 #define ENC_PULSES_CM 18.28
 #define ENC_PULSES_DEG 5.62
+#endif
 
 // Sharp IR
 // Constants derived from methodology described at http://www.acroname.com/robotics/info/articles/irlinear/irlinear.html

@@ -12,7 +12,8 @@ namespace {
 const int8_t QEM[16] = { 0, -1, 1, /*2*/0, 1, 0, /*2*/0, -1, -1, /*2*/0, 0, 1, /*2*/0, 1, -1, 0};
 volatile uint8_t prevEncReading[ENC_END];
 volatile int16_t encTicks[ENC_END];
-volatile uint32_t encDist[ENC_END];
+volatile uint32_t encAbsDist[ENC_END];
+volatile int32_t encDist[ENC_END];
 
 volatile bool ledon;
 
@@ -23,7 +24,8 @@ void intEncLB(void)
     const int8_t v = QEM[prevEncReading[ENC_LB] * 4 + reading];
 
     encTicks[ENC_LB] += v;
-    encDist[ENC_LB] += abs(v);
+    encAbsDist[ENC_LB] += abs(v);
+    encDist[ENC_LB] += v;
 
     prevEncReading[ENC_LB] = reading;
 }
@@ -35,7 +37,8 @@ void intEncLF(void)
     const int8_t v = QEM[prevEncReading[ENC_LF] * 4 + reading];
 
     encTicks[ENC_LF] += v;
-    encDist[ENC_LF] += abs(v);
+    encAbsDist[ENC_LF] += abs(v);
+    encDist[ENC_LF] += v;
 
     prevEncReading[ENC_LF] = reading;
 }
@@ -47,7 +50,8 @@ void intEncRB(void)
     const int8_t v = QEM[prevEncReading[ENC_RB] * 4 + reading];
 
     encTicks[ENC_RB] += v;
-    encDist[ENC_RB] += abs(v);
+    encAbsDist[ENC_RB] += abs(v);
+    encDist[ENC_RB] += v;
 
     prevEncReading[ENC_RB] = reading;
 }
@@ -59,7 +63,8 @@ void intEncRF(void)
     const int8_t v = QEM[prevEncReading[ENC_RF] * 4 + reading];
 
     encTicks[ENC_RF] += v;
-    encDist[ENC_RF] += abs(v);
+    encAbsDist[ENC_RF] += abs(v);
+    encDist[ENC_RF] += v;
 
     prevEncReading[ENC_RF] = reading;
 }
@@ -102,18 +107,28 @@ bool CEncoders::isMoving() const
     for (uint8_t e=0; e<ENC_END; ++e)
     {
         if (encSpeed[e])
-            return false;
+            return true;
     }
 
-    return true;
+    return false;
 }
 
-uint32_t CEncoders::getDist(EEncoder e) const
+uint32_t CEncoders::getAbsDist(EEncoder e) const
 {
+    return encAbsDist[e];
+}
+
+int32_t CEncoders::getDist(EEncoder e) const
+{
+    // Left-back and right-front encoders are inverted
+    if ((e == ENC_LB) || (e == ENC_RF))
+        return -encDist[e];
+
     return encDist[e];
 }
 
 void CEncoders::resetDist()
 {
-    memset((void *)encDist, 0, sizeof(encDist));
+    memset((void *)encAbsDist, 0, sizeof(encAbsDist));
+//    memset((void *)encDist, 0, sizeof(encDist));
 }

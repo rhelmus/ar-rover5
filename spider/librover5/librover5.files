@@ -32,3 +32,8 @@ button.h
 button.cpp
 Examples/wander/robotai.h
 Examples/wander/robotai.cpp
+Examples/LSMcalib/CMakeLists.txt
+Examples/LSMcalib/LSMcalib.cpp
+utils.h
+Examples/odotest/CMakeLists.txt
+Examples/odotest/odotest.cpp

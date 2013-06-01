@@ -5,7 +5,7 @@
 
 class CRobotAI
 {
-    enum EState { STATE_CRUISE, STATE_BACKOFF, STATE_TURNING, STATE_NONE };
+    enum EState { STATE_CRUISE, STATE_BACKOFF, STATE_INITTURN, STATE_TURNING, STATE_NONE };
 
     enum
     {
@@ -15,11 +15,12 @@ class CRobotAI
 
     EState state;
     uint16_t turnAngle;
+    uint32_t checkLDRTime, resetDriveTime;
 
     void setState(EState s);
 
 public:
-    CRobotAI(void) : state(STATE_NONE) { }
+    CRobotAI(void) : state(STATE_NONE), checkLDRTime(0), resetDriveTime(0) { }
 
     void init(void);
     void stop(void);

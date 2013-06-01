@@ -55,8 +55,6 @@ volatile SMotorControl motorControl;
 
 void getPitchRollHeading(int16_t &p, int16_t &r, uint16_t &h)
 {
-    getCompass().read();
-
     // From LSM303 application note
     // NOTE: pitch&roll are switched
     LSM303::vector vec = getCompass().a;
@@ -64,6 +62,19 @@ void getPitchRollHeading(int16_t &p, int16_t &r, uint16_t &h)
     const float fp = asin(-vec.x);
     r = round(fp * 180.0 / M_PI);
     p = round(asin(-vec.y / cos(fp)) * 180.0 / M_PI);
+
+    if (getCompass().m.x < getCompass().m_min.x)
+        getCompass().m_min.x = getCompass().m.x;
+    if (getCompass().m.y < getCompass().m_min.y)
+        getCompass().m_min.y = getCompass().m.y;
+    if (getCompass().m.z < getCompass().m_min.z)
+        getCompass().m_min.z = getCompass().m.z;
+    if (getCompass().m.x > getCompass().m_max.x)
+        getCompass().m_max.x = getCompass().m.x;
+    if (getCompass().m.y > getCompass().m_max.y)
+        getCompass().m_max.y = getCompass().m.y;
+    if (getCompass().m.z > getCompass().m_max.z)
+        getCompass().m_max.z = getCompass().m.z;
 
     h = getCompass().heading();
 }
@@ -279,7 +290,7 @@ void CRemoteInterface::update()
 
         TWIStartMessage(MSG_ENCODER_DISTANCE);
         for (uint8_t i=0; i<ENC_END; ++i)
-            TWISendLong(encoders.getDist(static_cast<EEncoder>(i)));
+            TWISendLong(encoders.getAbsDist(static_cast<EEncoder>(i)));
         Wire.endTransmission();
 
         TWIStartMessage(MSG_SERVO);

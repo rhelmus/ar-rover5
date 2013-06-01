@@ -36,8 +36,8 @@ bool CSharpIR::readingIsHit(uint8_t r) const
 
 void CSharpIR::clearReadings()
 {
-    memset(readings, 0, sizeof(readings));
-    readingsIndex = readingCount = hitCount = hitDistTotal = 0;
+    readings.reset();
+    totReadingCount = 0;
 }
 
 void CSharpIR::update()
@@ -50,25 +50,12 @@ void CSharpIR::update()
     {
         updateDelay = curtime + 50;
 
-        if (readingIsHit(readings[readingsIndex]))
-        {
-            --hitCount;
-            hitDistTotal -= readings[readingsIndex];
-        }
+        const uint8_t r = getDistReading();
 
-        readings[readingsIndex] = getDistReading();
+        if (readingIsHit(r))
+            readings.add(r);
 
-        if (readingIsHit(readings[readingsIndex]))
-        {
-            ++hitCount;
-            hitDistTotal += readings[readingsIndex];
-        }
-
-        ++readingsIndex;
-        if (readingsIndex >= READINGS_SIZE)
-            readingsIndex = 0;
-
-        ++readingCount;
+        ++totReadingCount;
     }
 }
 

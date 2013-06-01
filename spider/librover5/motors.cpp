@@ -229,7 +229,7 @@ void CMotors::update()
         // Left
         if (motorData[MOTOR_LB].targetDistance)
         {
-            const uint32_t dist = (encoders.getDist(ENC_LB) + encoders.getDist(ENC_LF)) / 2;
+            const uint32_t dist = (encoders.getAbsDist(ENC_LB) + encoders.getAbsDist(ENC_LF)) / 2;
 
             if (dist >= (motorData[MOTOR_LB].targetDistance - motorData[MOTOR_LB].targetEncSpeed))
             {
@@ -244,7 +244,7 @@ void CMotors::update()
         // Right
         if (motorData[MOTOR_RB].targetDistance)
         {
-            const uint32_t dist = (encoders.getDist(ENC_RB) + encoders.getDist(ENC_RF)) / 2;
+            const uint32_t dist = (encoders.getAbsDist(ENC_RB) + encoders.getAbsDist(ENC_RF)) / 2;
 
             if (dist >= (motorData[MOTOR_RB].targetDistance - motorData[MOTOR_RB].targetEncSpeed))
             {

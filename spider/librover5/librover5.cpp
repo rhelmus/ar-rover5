@@ -1,5 +1,6 @@
 #include "../../shared/shared.h"
 #include "librover5.h"
+#include "utils.h"
 
 #include <LSM303.h>
 #include <Servo.h>
@@ -37,21 +38,33 @@ void initRover5()
     servo.attach(PIN_SERVO);
     servo.write(90);
 
+    // From http://arduino.cc/en/Reference/Random
+    randomSeed(analogRead(PIN_RANDOM));
+
     // Also initializes Wire
     remoteInterface.init();
 
 #if 1
     compass.init();
     compass.enableDefault();
-    compass.m_min.x = -414; compass.m_min.y = -809; compass.m_min.z = -391;
-    compass.m_max.x = 520; compass.m_max.y = 212; compass.m_max.z = 632;
+    compass.setMagGain(LSM303::magGain_56);
+#if 0
+    // Default gain
+    compass.m_min.x = -647; compass.m_min.y = -152; compass.m_min.z = -324;
+    compass.m_max.x = 347; compass.m_max.y = 752; compass.m_max.z = 583;
+#endif
+
+    // Gain 5.6
+    compass.m_min.x = -173; compass.m_min.y = -2; compass.m_min.z = -84;
+    compass.m_max.x = 96; compass.m_max.y = 226; compass.m_max.z = 182;
+
     compass.setTimeout(100);
 #endif
 }
 
 void rover5Task()
 {
-    static uint32_t ADCCheckDelay;
+    static uint32_t ADCCheckDelay, compassreaddelay;
     static uint8_t spos = 90;
     const uint32_t curtime = millis();
 
@@ -99,7 +112,45 @@ void rover5Task()
 
         ADCCheckDelay = curtime + 400;
     }
+#if 1
+    if (compassreaddelay < curtime)
+    {
+        static uint8_t dumpcounter;
+        static CRollingAverage<6, uint16_t> magreadings;
 
+        compassreaddelay = curtime + 250;
+
+        const int16_t oldax = compass.a.x;
+        const int16_t olday = compass.a.y;
+        const int16_t oldaz = compass.a.z;
+
+        compass.read();
+
+        const int16_t dax = compass.a.x - oldax;
+        const int16_t day = compass.a.y - olday;
+        const int16_t daz = compass.a.z - oldaz;
+        const int16_t magnitude = sqrt(sq(compass.a.x) + sq(compass.a.y) + sq(compass.a.z)); //sqrt(sq(dax) + sq(day) + sq(daz));
+
+        magreadings.add(magnitude);
+        ++dumpcounter;
+
+        if (dumpcounter > 10)
+        {
+            //Serial.print("delta accel x, y, z: ");
+//            Serial.print(dax); Serial.print(",");
+//            Serial.print(day); Serial.print(",");
+//            Serial.print(daz); Serial.print(",");
+            Serial.println(magreadings.average());
+            dumpcounter = 0;
+        }
+
+        /*if (magnitude > 150)
+        {
+            Serial.print("magnitude: "); Serial.println(magnitude);
+            Serial.print("angle: "); Serial.println((atan2(compass.a.y, compass.a.x) * 180.0 / PI) + 180);
+        }*/
+    }
+#endif
     sevenSeg.update();
     remoteInterface.update();
 

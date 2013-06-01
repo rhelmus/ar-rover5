@@ -7,64 +7,29 @@
 
 //#define CALIB_FORWARD
 #define CALIB_TURN_LEFT
-//#define CALIB_TURN_LEFT
+//#define CALIB_TURN_RIGHT
 
 
 namespace {
 
 enum
 {
-    SW_PIN = 22,
-
     RUN_DIST = 70,
     RUN_ROTATION = 180,
     RUN_SPEED = 80
 };
 
-enum { MIN_SW_TIME = 50 };
-
-static struct
-{
-    uint8_t curState;
-    uint32_t startTime;
-} switchData;
-
-
-bool switchChanged(void)
-{
-    const uint8_t sw = digitalRead(SW_PIN);
-
-    if (sw != switchData.curState)
-    {
-        const uint32_t curtime = millis();
-
-        if (switchData.startTime == 0)
-            switchData.startTime = curtime;
-        else if ((curtime - switchData.startTime) > MIN_SW_TIME)
-        {
-            switchData.curState = sw;
-            switchData.startTime = 0;
-            return true;
-        }
-    }
-
-    return false;
-}
+CButton runButton(PIN_SWITCH);
 
 }
 
 
 void setup()
 {
-    pinMode(SW_PIN, INPUT);
-    digitalWrite(SW_PIN, HIGH);
-
     Serial.begin(115200);
 
     initRover5();
-
-    switchData.curState = HIGH;
-    switchData.startTime = 0;
+    runButton.init();
 
     Serial.println("Initialized");
 }
@@ -77,16 +42,17 @@ void loop()
 
     if (!running)
     {
-        // Switch pressed? (ie. back to unpressed)
-        if (switchChanged() && (switchData.curState == HIGH))
+        runButton.update();
+
+        if (runButton.wasPressed())
         {
+            runButton.confirmPressed();
             motors.enable();
-            Serial.print("Battery: "); Serial.println(analogRead(PIN_BATTERY), DEC);
 #if 1
 #ifdef CALIB_FORWARD
             motors.moveDistCm(RUN_SPEED, RUN_DIST, MDIR_FWD);
 #elif defined(CALIB_TURN_LEFT)
-//            motors.turnAngle(RUN_SPEED, 180, DIR_LEFT);
+            //motors.turnAngle(RUN_SPEED, 180, TDIR_LEFT);
 #elif defined(CALIB_TURN_RIGHT)
             motors.turn(RUN_SPEED, DIR_RIGHT);
 #endif
@@ -137,10 +103,10 @@ void loop()
         !encoders.getSpeed(ENC_RF)*/ motors.distanceReached())
     {
         Serial.println("Run finished!");
-        Serial.print("left-back: "); Serial.println(encoders.getDist(ENC_LB), DEC);
-        Serial.print("left-front: "); Serial.println(encoders.getDist(ENC_LF), DEC);
-        Serial.print("right-back: "); Serial.println(encoders.getDist(ENC_RB), DEC);
-        Serial.print("right-front: "); Serial.println(encoders.getDist(ENC_RF), DEC);
+        Serial.print("left-back: "); Serial.println(encoders.getAbsDist(ENC_LB), DEC);
+        Serial.print("left-front: "); Serial.println(encoders.getAbsDist(ENC_LF), DEC);
+        Serial.print("right-back: "); Serial.println(encoders.getAbsDist(ENC_RB), DEC);
+        Serial.print("right-front: "); Serial.println(encoders.getAbsDist(ENC_RF), DEC);
         encoders.resetDist();
         running = false;
     }

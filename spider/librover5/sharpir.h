@@ -2,6 +2,7 @@
 #define SHARPIR_H
 
 #include "../../shared/shared.h"
+#include "utils.h"
 
 #include <stdint.h>
 
@@ -17,9 +18,8 @@ private:
 
     uint8_t ADCPin;
     EModel model;
-    uint8_t readings[READINGS_SIZE];
-    uint16_t hitDistTotal, readingCount, hitCount;
-    uint8_t readingsIndex;
+    CRollingAverage<READINGS_SIZE, uint8_t> readings;
+    uint16_t totReadingCount;
     uint32_t updateDelay;
 
     uint8_t getDistReading(void) const;
@@ -27,14 +27,12 @@ private:
 
 public:
     CSharpIR(uint8_t p, EModel m)
-        : ADCPin(p), model(m), hitDistTotal(0), readingCount(0), hitCount(0),
-          readingsIndex(0), updateDelay(0) { clearReadings(); }
+        : ADCPin(p), model(m), totReadingCount(0), updateDelay(0) { clearReadings(); }
 
     void clearReadings(void);
-    uint8_t getAvgDist(void) const
-    { return hitDistTotal / min(hitCount, READINGS_SIZE); }
-    uint8_t getReadingCount(void) const { return readingCount; }
-    uint8_t getHitCount(void) const { return hitCount; }
+    uint8_t getAvgDist(void) const { return readings.average(); }
+    uint8_t getTotReadingCount(void) const { return totReadingCount; }
+    uint8_t getHitCount(void) const { return readings.getCount(); }
     void update(void);
 };
 
