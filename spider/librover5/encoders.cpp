@@ -1,7 +1,9 @@
 #include "constants.h"
 #include "encoders.h"
+#include "librover5.h"
 
 #include <Arduino.h>
+#include <LSM303.h>
 
 CEncoders encoders;
 
@@ -23,7 +25,7 @@ void intEncLB(void)
             ((PINC & (1<<PC3)) != 0);
     const int8_t v = QEM[prevEncReading[ENC_LB] * 4 + reading];
 
-    encTicks[ENC_LB] += v;
+    encTicks[ENC_LB] -= v; // Note: inverted
     encAbsDist[ENC_LB] += abs(v);
     encDist[ENC_LB] += v;
 
@@ -62,7 +64,7 @@ void intEncRF(void)
             ((PINC & (1<<PC1)) != 0);
     const int8_t v = QEM[prevEncReading[ENC_RF] * 4 + reading];
 
-    encTicks[ENC_RF] += v;
+    encTicks[ENC_RF] -= v; // Note: inverted
     encAbsDist[ENC_RF] += abs(v);
     encDist[ENC_RF] += v;
 
@@ -86,18 +88,42 @@ void CEncoders::init()
     attachInterrupt(INT_ENC_LF, intEncLF, CHANGE);
     attachInterrupt(INT_ENC_RB, intEncRB, CHANGE);
     attachInterrupt(INT_ENC_RF, intEncRF, CHANGE);
+
+    // Initialize theta from compass
+    getCompass().read();
+    theta = (getCompass().heading() * PI / 180.0);
 }
 
 void CEncoders::update()
 {
+    // Update position
+    const int32_t le = ((::encTicks[ENC_LB] + ::encTicks[ENC_LF]) / 2);
+    const int32_t re = ((::encTicks[ENC_RB] + ::encTicks[ENC_RF]) / 2);
+
+    const float ldist = le / ENC_PULSES_CM, rdist = re / ENC_PULSES_CM;
+
+    theta += ((ldist - rdist) / 2.0 / WHEEL_BASE);
+
+    // Clamp
+    const float PI2 = PI * 2.0;
+    while (true)
+    {
+        if (theta > PI2)
+            theta -= PI2;
+        else if (theta < 0)
+            theta += PI2;
+        else
+            break;
+    }
+
+    const float dist = (ldist + rdist) / 2.0;
+    xPos += dist * sin(theta);
+    yPos += dist * cos(theta);
+
+    // Update speed & reset ticks
     for (uint8_t e=0; e<ENC_END; ++e)
     {
-        // Left-back and right-front encoders are inverted
-        if ((e == ENC_LB) || (e == ENC_RF))
-            encSpeed[e] = -(::encTicks[e]);
-        else
-            encSpeed[e] = ::encTicks[e];
-
+        encSpeed[e] = ::encTicks[e];
         ::encTicks[e] = 0;
     }
 }

@@ -3,11 +3,14 @@
 
 #include "../../shared/shared.h"
 
+#include <Arduino.h>
+
 #include <stdint.h>
 
 class CEncoders
 {
     volatile int16_t encSpeed[ENC_END];
+    volatile float xPos, yPos, theta;
 
 public:
     void init(void);
@@ -18,6 +21,9 @@ public:
     uint32_t getAbsDist(EEncoder e) const;
     int32_t getDist(EEncoder e) const;
     void resetDist(void);
+    float getXPos(void) const { return xPos; }
+    float getYPos(void) const { return yPos; }
+    float getRotation(void) const { return theta * 180.0 / PI; }
 };
 
 extern CEncoders encoders;

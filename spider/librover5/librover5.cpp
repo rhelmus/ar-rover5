@@ -27,7 +27,6 @@ void initRover5()
 
     pinMode(PIN_FRONTLEDS, OUTPUT);
 
-    encoders.init();
     motors.init();
     shiftRegister.init();
     sevenSeg.init();
@@ -60,6 +59,8 @@ void initRover5()
 
     compass.setTimeout(100);
 #endif
+
+    encoders.init(); // Need to do this after compass (uses it)
 }
 
 void rover5Task()

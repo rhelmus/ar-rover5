@@ -1,5 +1,6 @@
 #include "../../shared/tcputils.h"
 #include "btinterface.h"
+#include "mapscene.h"
 #include "numstatwidget.h"
 #include "rover5control.h"
 #include "scaledpixmapwidget.h"
@@ -12,6 +13,8 @@
 CRover5Control::CRover5Control(QWidget *parent)
     : QMainWindow(parent), tcpClientSocket(0), tcpReadBlockSize(0)
 {
+    resize(800, 600);
+
     QWidget *cw = new QWidget(this);
     setCentralWidget(cw);
 
@@ -29,7 +32,7 @@ CRover5Control::CRover5Control(QWidget *parent)
     QGridLayout *grid = new QGridLayout(cw);
 
     grid->addWidget(createStatusWidgets(), 0, 0, 2, 1);
-    grid->addWidget(createCameraWidgets(), 0, 1);
+    grid->addWidget(createViewWidgets(), 0, 1);
     grid->addWidget(createDriveWidgets(), 1, 1);
 
     statusBar()->addPermanentWidget(btConnectedStatLabel = new QLabel("BT disconnected"));
@@ -118,35 +121,13 @@ QWidget *CRover5Control::createStatusWidgets()
     return ret;
 }
 
-QWidget *CRover5Control::createCameraWidgets()
+QWidget *CRover5Control::createViewWidgets()
 {
-    QWidget *ret = createFrameGroupWidget("Camera");
+    QTabWidget *ret = new QTabWidget;
 
-    QWidget *w = new QWidget;
-    ret->layout()->addWidget(w);
-    QHBoxLayout *hbox = new QHBoxLayout(w);
-
-    hbox->addWidget(camWidget = new CScaledPixmapWidget);
-    camWidget->setRotation(270);
-
-    QFrame *frame = new QFrame;
-    frame->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    frame->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
-    QFormLayout *form = new QFormLayout(frame);
-    hbox->addWidget(frame, 0, Qt::AlignTop);
-
-    form->addRow("Zoom", camZoomSlider = new QSlider(Qt::Horizontal));
-    camZoomSlider->setRange(10, 40);
-    camZoomSlider->setTickInterval(1);
-
-    form->addRow("Brightness", camBrightnessSpinBox = new QSpinBox);
-    camBrightnessSpinBox->setRange(0, 255);
-
-    zoomApplyTimer = new QTimer(this);
-    zoomApplyTimer->setInterval(500);
-    zoomApplyTimer->setSingleShot(true);
-    connect(zoomApplyTimer, SIGNAL(timeout()), SLOT(applyCamZoom()));
-    connect(camZoomSlider, SIGNAL(valueChanged(int)), zoomApplyTimer, SLOT(start()));
+    ret->addTab(createCameraTab(), "Camera");
+    ret->addTab(createMapTab(), "Map");
+    ret->setCurrentIndex(1);
 
     return ret;
 }
@@ -177,6 +158,53 @@ QWidget *CRover5Control::createDriveWidgets()
 
     return ret;
 
+}
+
+QWidget *CRover5Control::createCameraTab()
+{
+    QWidget *ret = new QWidget;
+    QHBoxLayout *hbox = new QHBoxLayout(ret);
+
+    hbox->addWidget(camWidget = new CScaledPixmapWidget);
+    camWidget->setRotation(270);
+
+    QFrame *frame = new QFrame;
+    frame->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    frame->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
+    QFormLayout *form = new QFormLayout(frame);
+    hbox->addWidget(frame, 0, Qt::AlignTop);
+
+    form->addRow("Zoom", camZoomSlider = new QSlider(Qt::Horizontal));
+    camZoomSlider->setRange(10, 40);
+    camZoomSlider->setTickInterval(1);
+
+    form->addRow("Brightness", camBrightnessSpinBox = new QSpinBox);
+    camBrightnessSpinBox->setRange(0, 255);
+
+    zoomApplyTimer = new QTimer(this);
+    zoomApplyTimer->setInterval(500);
+    zoomApplyTimer->setSingleShot(true);
+    connect(zoomApplyTimer, SIGNAL(timeout()), SLOT(applyCamZoom()));
+    connect(camZoomSlider, SIGNAL(valueChanged(int)), zoomApplyTimer, SLOT(start()));
+
+    return ret;
+}
+
+QWidget *CRover5Control::createMapTab()
+{
+    QWidget *ret = new QWidget;
+    QVBoxLayout *vbox = new QVBoxLayout(ret);
+
+    CMapScene *scene = new CMapScene(this);
+
+    scene->addPosition(10, 10);
+    scene->addPosition(10, 20);
+    scene->addPosition(20, 20);
+
+    QGraphicsView *view = new QGraphicsView(scene);
+    vbox->addWidget(view);
+
+    return ret;
 }
 
 void CRover5Control::initTcpServer()

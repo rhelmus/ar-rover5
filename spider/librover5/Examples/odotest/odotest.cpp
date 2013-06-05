@@ -7,6 +7,12 @@
 
 // Odometry positioning from http://geology.heroy.smu.edu/~dpa-www/robo/Encoder/imu_odo/
 
+namespace {
+
+const float wheelBase = 23.0;
+
+}
+
 void setup()
 {
     Serial.begin(115200);
@@ -23,10 +29,11 @@ void loop()
     static float xpos, ypos, theta;
     static int32_t lastlenc, lastrenc;
     const uint32_t curtime = millis();
-    static const float PI2 = PI * 2.0;
+    const float PI2 = PI * 2.0;
 
     if (updelay < curtime)
     {
+#if 0
         if (updelay == 0) // Init
         {
             getCompass().read();
@@ -45,7 +52,8 @@ void loop()
 
         const float ldist = lticks / ENC_PULSES_CM, rdist = rticks / ENC_PULSES_CM;
 
-        theta += (((float)(lticks - rticks) / ENC_PULSES_DEG / 2.0) * PI / 180.0);
+//        theta += (((float)(lticks - rticks) / ENC_PULSES_DEG / 2.0) * PI / 180.0);
+        theta += ((ldist - rdist) / 2.0 / wheelBase);
 
         // Clamp
         while (true)
@@ -61,13 +69,13 @@ void loop()
 //        theta -= ((float)((int)(theta/M_2_PI)) * M_2_PI);
 
         const float dist = (ldist + rdist) / 2.0;
-        xpos += dist * 1.0;//sin(theta);
-        ypos += dist * 1.0;//cos(theta);
-
+        xpos += dist * sin(theta);
+        ypos += dist * cos(theta);
+#endif
         Serial.print("X/Y/theta: ");
-        Serial.print(xpos); Serial.print(", ");
-        Serial.print(ypos); Serial.print(", ");
-        Serial.println(theta * 180.0 / PI);
+        Serial.print(encoders.getXPos()); Serial.print(", ");
+        Serial.print(encoders.getYPos()); Serial.print(", ");
+        Serial.println(encoders.getRotation());
     }
 
     rover5Task();

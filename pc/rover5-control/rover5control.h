@@ -51,8 +51,10 @@ class CRover5Control : public QMainWindow
     QTime lastPingTime;
 
     QWidget *createStatusWidgets(void);
-    QWidget *createCameraWidgets(void);
+    QWidget *createViewWidgets(void);
     QWidget *createDriveWidgets(void);
+    QWidget *createCameraTab(void);
+    QWidget *createMapTab(void);
 
     void initTcpServer(void);
     bool canSendTcp(void) const;

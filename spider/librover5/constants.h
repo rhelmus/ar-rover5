@@ -78,6 +78,7 @@ enum
 #ifdef MECANUM_MOVEMENT
 #define ENC_PULSES_CM 20.18
 #define ENC_PULSES_DEG 6.93
+#define WHEEL_BASE 23.0
 #else
 #define ENC_PULSES_CM 18.28
 #define ENC_PULSES_DEG 5.62

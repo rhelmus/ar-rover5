@@ -20,7 +20,8 @@ SOURCES += main.cpp\
     numstatwidget.cpp \
     utils.cpp \
     drivewidget.cpp \
-    scaledpixmapwidget.cpp
+    scaledpixmapwidget.cpp \
+    mapscene.cpp
 
 HEADERS  += rover5control.h \
     ../../shared/tcputils.h \
@@ -29,7 +30,8 @@ HEADERS  += rover5control.h \
     numstatwidget.h \
     utils.h \
     drivewidget.h \
-    scaledpixmapwidget.h
+    scaledpixmapwidget.h \
+    mapscene.h
 
 OTHER_FILES +=
 
