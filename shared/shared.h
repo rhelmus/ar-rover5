@@ -14,6 +14,7 @@ enum EMessage
     MSG_MOTOR_CURRENT,
     MSG_ENCODER_SPEED,
     MSG_ENCODER_DISTANCE,
+    MSG_ODOMETRY,
     MSG_SERVO,
     MSG_BATTERY,
     MSG_IMU,
@@ -116,6 +117,11 @@ inline uint32_t bytesToLong(uint8_t b1, uint8_t b2, uint8_t b3, uint8_t b4)
 {
     return (static_cast<uint32_t>(b4) << 24) | (static_cast<uint32_t>(b3) << 16) |
            (static_cast<uint32_t>(b2) << 8) | b1;
+}
+
+inline float bytesToFloat(uint8_t b1, uint8_t b2, uint8_t b3, uint8_t b4)
+{
+    return static_cast<float>((int32_t)bytesToLong(b1, b2, b3, b4)) / 1000.0;
 }
 
 inline void intToBytes(uint16_t i, uint8_t *buf)

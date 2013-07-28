@@ -91,7 +91,7 @@ void CEncoders::init()
 
     // Initialize theta from compass
     getCompass().read();
-    theta = (getCompass().heading() * PI / 180.0);
+    theta = 0.0;//(getCompass().heading() * PI / 180.0);
 }
 
 void CEncoders::update()

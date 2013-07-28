@@ -17,6 +17,7 @@ class QTcpServer;
 class QTcpSocket;
 
 class CBTInterface;
+class CMapScene;
 class CNumStatWidget;
 class CScaledPixmapWidget;
 
@@ -36,11 +37,14 @@ class CRover5Control : public QMainWindow
     CNumStatWidget *sharpIRLRStatW, *sharpIRLFRFStatW, *sharpIRFrontStatW;
     CNumStatWidget *sharpIRTurretStatW;
     CNumStatWidget *pitchStatW, *rollStatW, *headingStatW;
+    CNumStatWidget *odoPosXStatW, *odoPosYStatW, *odoRotStatW;
     CNumStatWidget *batteryStatW, *servoPosStatW, *pingStatW;
 
     QSlider *camZoomSlider;
     QTimer *zoomApplyTimer;
     QSpinBox *camBrightnessSpinBox;
+
+    CMapScene *mapScene;
 
     QTcpServer *tcpServer;
     QSignalMapper *tcpDisconnectMapper;

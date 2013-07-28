@@ -9,6 +9,8 @@ class CMapScene : public QGraphicsScene
 
     QGraphicsPathItem *pathItem;
 
+    int getCell(qreal x, qreal y) const;
+
 protected:
     void drawBackground(QPainter *painter, const QRectF &rect);
 

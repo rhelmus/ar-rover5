@@ -45,3 +45,8 @@ void CNumStatWidget::set(int col, int val)
 {
     statWidgetList[col]->setText(QString::number(val));
 }
+
+void CNumStatWidget::setF(int col, float val)
+{
+    statWidgetList[col]->setText(QString::number(val));
+}

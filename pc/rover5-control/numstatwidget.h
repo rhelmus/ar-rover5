@@ -13,6 +13,7 @@ public:
     CNumStatWidget(const QString &l, int cols, QWidget *parent = 0);
 
     void set(int col, int val);
+    void setF(int col, float val);
 };
 
 #endif // NUMSTATWIDGET_H

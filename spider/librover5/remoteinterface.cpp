@@ -106,6 +106,11 @@ void TWISendLong(uint32_t i)
     Wire.write(buf, 4);
 }
 
+void TWISendFloat(float f)
+{
+    TWISendLong(static_cast<int32_t>(f * 1000.0)); // 3 decimal accuracy
+}
+
 void TWIReceiveCB(int bytes)
 {
     const EMessage msg = static_cast<EMessage>(Wire.read());
@@ -291,6 +296,12 @@ void CRemoteInterface::update()
         TWIStartMessage(MSG_ENCODER_DISTANCE);
         for (uint8_t i=0; i<ENC_END; ++i)
             TWISendLong(encoders.getAbsDist(static_cast<EEncoder>(i)));
+        Wire.endTransmission();
+
+        TWIStartMessage(MSG_ODOMETRY);
+        TWISendFloat(encoders.getXPos());
+        TWISendFloat(encoders.getYPos());
+        TWISendFloat(encoders.getRotation());
         Wire.endTransmission();
 
         TWIStartMessage(MSG_SERVO);

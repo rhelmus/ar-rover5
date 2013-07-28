@@ -111,6 +111,11 @@ QWidget *CRover5Control::createStatusWidgets()
     fgroup->layout()->addWidget(rollStatW = new CNumStatWidget("Roll", 1));
     fgroup->layout()->addWidget(headingStatW = new CNumStatWidget("Heading", 1));
 
+    vbox->addWidget(fgroup = createFrameGroupWidget("Odometry", true), 0, Qt::AlignTop);
+    fgroup->layout()->addWidget(odoPosXStatW = new CNumStatWidget("X position", 1));
+    fgroup->layout()->addWidget(odoPosYStatW = new CNumStatWidget("Y position", 1));
+    fgroup->layout()->addWidget(odoRotStatW = new CNumStatWidget("Rotation", 1));
+
     vbox->addWidget(fgroup = createFrameGroupWidget("Misc.", true), 0, Qt::AlignTop);
     fgroup->layout()->addWidget(batteryStatW = new CNumStatWidget("Battery", 1));
     fgroup->layout()->addWidget(servoPosStatW = new CNumStatWidget("Servo pos", 1));
@@ -195,14 +200,10 @@ QWidget *CRover5Control::createMapTab()
     QWidget *ret = new QWidget;
     QVBoxLayout *vbox = new QVBoxLayout(ret);
 
-    CMapScene *scene = new CMapScene(this);
-
-    scene->addPosition(10, 10);
-    scene->addPosition(10, 20);
-    scene->addPosition(20, 20);
-
-    QGraphicsView *view = new QGraphicsView(scene);
+    QGraphicsView *view = new QGraphicsView(mapScene = new CMapScene(this));
     vbox->addWidget(view);
+
+//    mapScene->addPosition(-76.828, -41.255);
 
     return ret;
 }
@@ -395,6 +396,18 @@ void CRover5Control::btMsgReceived(EMessage m, QByteArray data)
         sharpIRFrontStatW->set(0, (uint8_t)data[SHARPIR_FW]);
 
         sharpIRTurretStatW->set(0, (uint8_t)data[SHARPIR_TURRET]);
+    }
+    else if (m == MSG_ODOMETRY)
+    {
+        const float x = bytesToFloat(data[0], data[1], data[2], data[3]);
+        const float y = bytesToFloat(data[4], data[5], data[6], data[7]);
+        const float rot = bytesToFloat(data[8], data[9], data[10], data[11]);
+
+        odoPosXStatW->setF(0, x);
+        odoPosYStatW->setF(0, y);
+        odoRotStatW->setF(0, rot);
+
+        mapScene->addPosition(x, y);
     }
     else if (m == MSG_BATTERY)
         batteryStatW->set(0, bytesToInt(data[0], data[1]));
