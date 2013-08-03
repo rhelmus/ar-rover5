@@ -76,6 +76,7 @@ void loop()
             motors.move(mspeed, MDIR_FWD);
         else if (currentmsg.command == IRCMD_BWD)
             motors.move(mspeed, MDIR_BWD);
+#ifdef MECANUM_MOVEMENT
         else if (currentmsg.translate)
         {
             if (currentmsg.command == IRCMD_LEFT)
@@ -91,6 +92,7 @@ void loop()
             else if (currentmsg.command == IRCMD_RIGHT_BWD)
                 motors.translate(mspeed, TRDIR_RIGHT_BWD);
         }
+#endif
         else
         {
             if (currentmsg.command == IRCMD_LEFT)

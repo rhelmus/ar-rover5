@@ -9,7 +9,7 @@
 
 namespace {
 
-Servo servo;
+Servo lowerServo, upperServo;
 LSM303 compass;
 
 void timerISR(void)
@@ -34,8 +34,11 @@ void initRover5()
     Timer1.initialize(200000); // Every 200 ms
     Timer1.attachInterrupt(timerISR);
 
-    servo.attach(PIN_SERVO);
-    servo.write(90);
+    lowerServo.attach(PIN_LOWERSERVO);
+    lowerServo.write(90);
+
+    upperServo.attach(PIN_UPPERSERVO);
+    upperServo.write(135);
 
     // From http://arduino.cc/en/Reference/Random
     randomSeed(analogRead(PIN_RANDOM));
@@ -156,12 +159,18 @@ void rover5Task()
     remoteInterface.update();
 
     for (uint8_t i=0; i<SHARPIR_END; ++i)
+    {
         sharpIR[i].update();
+
+        // UNDONE!!
+        if (sharpIR[i].getTotReadingCount() > 5)
+            sharpIR[i].clearReadings();
+    }
 }
 
-Servo &getServo()
+Servo &getLowerServo()
 {
-    return servo;
+    return lowerServo;
 }
 
 LSM303 &getCompass()

@@ -57,8 +57,8 @@ enum
     BRIDGE_MAX_REQSIZE = 16
 };
 
-//#define TRACKED_MOVEMENT
-#define MECANUM_MOVEMENT
+#define TRACKED_MOVEMENT
+//#define MECANUM_MOVEMENT
 
 enum
 {

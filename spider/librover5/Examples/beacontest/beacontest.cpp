@@ -78,7 +78,7 @@ void loop()
 
         if (state.IRReadings > 6)
         {
-            Servo &servo = getServo();
+            Servo &servo = getLowerServo();
             int16_t newspos = servo.read() + state.servoStep;
 
             if (newspos < 0)

@@ -69,7 +69,8 @@ enum
     PIN_SHARP_IR_RIGHT_FW = 12,
     PIN_LDR = 13,
     PIN_RANDOM = 15,
-    PIN_SERVO = 51,
+    PIN_LOWERSERVO = 51,
+    PIN_UPPERSERVO = 50,
     PIN_SWITCH = 22,
     PIN_FRONTLEDS = 10
 };
@@ -82,6 +83,7 @@ enum
 #else
 #define ENC_PULSES_CM 18.28
 #define ENC_PULSES_DEG 5.62
+#define WHEEL_BASE 20.5 // UNDONE
 #endif
 
 // Sharp IR

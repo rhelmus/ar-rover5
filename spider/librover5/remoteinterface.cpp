@@ -235,6 +235,7 @@ void CRemoteInterface::update()
                 motors.turnAngle(motorControl.turnSpeed, motorControl.angle,
                                  motorControl.turnDir);
         }
+#ifdef MECANUM_MOVEMENT
         else if (motorControl.moveType == SMotorControl::MOVE_TRANSLATE)
         {
             if (!motorControl.distance)
@@ -247,6 +248,7 @@ void CRemoteInterface::update()
                 motors.translateCm(motorControl.translateSpeed, motorControl.distance,
                                    motorControl.translateDir);
         }
+#endif
         else // MOVE_NONE
             motors.stop();
 
@@ -305,7 +307,7 @@ void CRemoteInterface::update()
         Wire.endTransmission();
 
         TWIStartMessage(MSG_SERVO);
-        Wire.write(getServo().read());
+        Wire.write(getLowerServo().read());
         Wire.endTransmission();
 
         TWIStartMessage(MSG_BATTERY);

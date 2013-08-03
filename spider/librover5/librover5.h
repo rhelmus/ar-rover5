@@ -19,7 +19,7 @@ class LSM303;
 
 void initRover5(void);
 void rover5Task(void);
-Servo &getServo(void);
+Servo &getLowerServo(void);
 LSM303 &getCompass(void);
 
 #endif
