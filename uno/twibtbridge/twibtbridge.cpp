@@ -19,6 +19,8 @@ int freeRam()
 
 namespace {
 
+enum { MAX_BT_TRANSMISSION = 15, BT_UPDELAY = 10 };
+
 volatile CRingBuffer<128> TWIPassBuffer;
 
 USB usbDev;
@@ -79,7 +81,7 @@ void setup()
     Wire.onReceive(TWIReceive);
 
     // Enable watchdog in case bluetooth crashes (e.g. out of range)
-    wdt_enable(WDTO_4S);
+//    wdt_enable(WDTO_4S);
 
     Serial.println(F("Initialized"));
     Serial.print(F("Free RAM: ")); Serial.println(freeRam());
@@ -94,28 +96,30 @@ void loop()
     if ((ignoreconupdatedelay < curtime) && !btConnected && serialBluetooth.connected)
         btConnected = true;
 
-    if (!btConnected)
-        wdt_reset(); // Only update if not connected yet or got a pong (see below)
+//    if (!btConnected)
+//        wdt_reset(); // Only update if not connected yet or got a pong (see below)
 
     usbDev.Task();
 
     if (updelay < curtime)
     {
-        updelay = curtime + 10;
+        updelay = curtime + BT_UPDELAY;
 
         if (serialBluetooth.connected)
         {
-            uint8_t buf[15];
+            uint8_t buf[MAX_BT_TRANSMISSION];
             uint8_t count = 0;
-            while (!TWIPassBuffer.isEmpty() && (count < 15))
+            while (!TWIPassBuffer.isEmpty() && (count < MAX_BT_TRANSMISSION))
             {
                 buf[count] = TWIPassBuffer.pop();
                 ++count;
             }
-            serialBluetooth.print(buf, count);
+
+            if (count)
+                serialBluetooth.print(buf, count);
 
             count = 0;
-            while (serialBluetooth.available() && (count < 15))
+            while (serialBluetooth.available() && (count < MAX_BT_TRANSMISSION))
             {
                 const uint8_t b = serialBluetooth.read();
                 if (!receivedBTStart)
@@ -141,7 +145,7 @@ void loop()
                         if (curbtmessage == MSG_PONG)
                         {
                             tempBTMsgBuffer.clear();
-                            wdt_reset();
+//                            wdt_reset();
                         }
                         else if (curbtmessage == MSG_CNTRL_DISCONNECT)
                         {

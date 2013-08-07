@@ -26,7 +26,7 @@ uint16_t findTurnAngle(void)
 
     if (!startleft)
     {
-        if (!sharpIRFoundHit(SHARPIR_LEFT, 50) && !sharpIRFoundHit(SHARPIR_LEFT_FW, 50))
+        if (!sharpIRFoundHit(SHARPIR_LEFT, 50) && !sharpIRFoundHit(/*SHARPIR_LEFT_FW*/SHARPIR_RIGHT_FW, 50))
             return random(270, 316);
     }
 
@@ -84,21 +84,32 @@ void CRobotAI::think()
     if (state == STATE_CRUISE)
     {
         // NOTE: Assume that every sharp sensor has the same reading count
-        if (sharpIR[SHARPIR_TURRET].getTotReadingCount() >= 3)
+        if (sharpIR[SHARPIR_TURRET].getTotReadingCount() >= 8)
         {
             if (sharpIRFoundHit(SHARPIR_TURRET, 45) || sharpIRFoundHit(SHARPIR_FW, 30) ||
                 sharpIRFoundHit(SHARPIR_LEFT_FW, 20) || sharpIRFoundHit(SHARPIR_RIGHT_FW, 20))
             {
+                if (sharpIRFoundHit(SHARPIR_TURRET, 45))
+                    digitalWrite(PIN_LED_RED_BACK, HIGH);
+                else if (sharpIRFoundHit(SHARPIR_FW, 30))
+                    digitalWrite(PIN_LED_RED_FRONT, HIGH);
+                else if (sharpIRFoundHit(SHARPIR_LEFT_FW, 20))
+                    digitalWrite(PIN_LED_GREEN_LEFT, HIGH);
+                else if (sharpIRFoundHit(SHARPIR_RIGHT_FW, 20))
+                    digitalWrite(PIN_LED_GREEN_RIGHT, HIGH);
+
                 turnAngle = findTurnAngle();
                 setState(STATE_INITTURN);
             }
-            else if (sharpIRFoundHit(SHARPIR_LEFT, 15)/* || sharpIRFoundHit(SHARPIR_LEFT_FW, 20)*/)
+            else if (sharpIRFoundHit(SHARPIR_LEFT, 25) || /*sharpIRFoundHit(SHARPIR_LEFT_FW, 20)*/
+                     sharpIRFoundHit(SHARPIR_RIGHT_FW, 40))
             {
                 motors.setLeftSpeed(CRUISE_SPEED + 15);
                 motors.setRightSpeed(CRUISE_SPEED - 40);
                 resetDriveTime = curtime + 750;
             }
-            else if (sharpIRFoundHit(SHARPIR_RIGHT, 15)/* || sharpIRFoundHit(SHARPIR_RIGHT_FW, 20)*/)
+            else if (sharpIRFoundHit(SHARPIR_RIGHT, 25) || /*sharpIRFoundHit(SHARPIR_RIGHT_FW, 20)*/
+                     sharpIRFoundHit(SHARPIR_LEFT_FW, 40))
             {
                 motors.setLeftSpeed(CRUISE_SPEED - 40);
                 motors.setRightSpeed(CRUISE_SPEED + 15);
@@ -122,6 +133,10 @@ void CRobotAI::think()
     else if (state == STATE_TURNING)
     {
         if (motors.distanceReached() && !encoders.isMoving())
+        {
             setState(STATE_CRUISE);
+            for (uint8_t i=PIN_LED_GREEN_LEFT; i<=PIN_LED_RED_BACK; ++i)
+                digitalWrite(i, LOW);
+        }
     }
 }

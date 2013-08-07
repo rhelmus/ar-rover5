@@ -58,6 +58,14 @@ enum
     PIN_7SEG_G = 5,
     PIN_7SEG_DEC = 3,
 
+    //
+    PIN_LED_GREEN_LEFT = 42,
+    PIN_LED_GREEN_RIGHT = 43,
+    PIN_LED_YELLOW_LEFT = 44,
+    PIN_LED_YELLOW_RIGHT= 45,
+    PIN_LED_RED_FRONT = 46,
+    PIN_LED_RED_BACK = 47,
+
     // Misc
     PIN_RELAY = 30,
     PIN_BATTERY = 4,
@@ -83,7 +91,7 @@ enum
 #else
 #define ENC_PULSES_CM 18.28
 #define ENC_PULSES_DEG 5.62
-#define WHEEL_BASE 20.5 // UNDONE
+#define WHEEL_BASE 18.10 // UNDONE
 #endif
 
 // Sharp IR

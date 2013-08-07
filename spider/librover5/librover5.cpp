@@ -27,6 +27,13 @@ void initRover5()
 
     pinMode(PIN_FRONTLEDS, OUTPUT);
 
+    pinMode(PIN_LED_GREEN_LEFT, OUTPUT);
+    pinMode(PIN_LED_GREEN_RIGHT, OUTPUT);
+    pinMode(PIN_LED_YELLOW_LEFT, OUTPUT);
+    pinMode(PIN_LED_YELLOW_RIGHT, OUTPUT);
+    pinMode(PIN_LED_RED_FRONT, OUTPUT);
+    pinMode(PIN_LED_RED_BACK, OUTPUT);
+
     motors.init();
     shiftRegister.init();
     sevenSeg.init();
@@ -163,8 +170,8 @@ void rover5Task()
         sharpIR[i].update();
 
         // UNDONE!!
-        if (sharpIR[i].getTotReadingCount() > 5)
-            sharpIR[i].clearReadings();
+        /*if (sharpIR[i].getTotReadingCount() > 5)
+            sharpIR[i].clearReadings();*/
     }
 }
 
