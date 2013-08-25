@@ -9,8 +9,8 @@ class CRobotAI
 
     enum
     {
-        CRUISE_SPEED = 95,
-        TURN_SPEED = 80
+        CRUISE_SPEED = 80,
+        TURN_SPEED = 70
     };
 
     EState state;

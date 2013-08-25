@@ -263,13 +263,26 @@ void CMotors::update()
 //#endif
     }
 
+    bool changingdir = false;
     for (uint8_t m=0; m<MOTOR_END; ++m)
     {
         if (motorData[m].targetDirection != motorData[m].setDirection)
         {
+            changingdir = true;
+            break;
+        }
+    }
+
+    for (uint8_t m=0; m<MOTOR_END; ++m)
+    {
+        if (changingdir)
+        {
             if (motorData[m].setPower == 0)
-                setEffMotorDirection(static_cast<EMotor>(m),
-                                     motorData[m].targetDirection);
+            {
+                if (motorData[m].targetDirection != motorData[m].setDirection)
+                    setEffMotorDirection(static_cast<EMotor>(m),
+                                         motorData[m].targetDirection);
+            }
             else if (motorData[m].setPower < MIN_MOTOR_POWER)
                 setEffMotorSpeed(static_cast<EMotor>(m), 0);
             else

@@ -86,7 +86,7 @@ void CRobotAI::think()
         // NOTE: Assume that every sharp sensor has the same reading count
         if (sharpIR[SHARPIR_TURRET].getTotReadingCount() >= 8)
         {
-            if (sharpIRFoundHit(SHARPIR_TURRET, 45) || sharpIRFoundHit(SHARPIR_FW, 30) ||
+            if (sharpIRFoundHit(SHARPIR_TURRET, 25) || sharpIRFoundHit(SHARPIR_FW, 25) ||
                 sharpIRFoundHit(SHARPIR_LEFT_FW, 20) || sharpIRFoundHit(SHARPIR_RIGHT_FW, 20))
             {
                 if (sharpIRFoundHit(SHARPIR_TURRET, 45))
@@ -98,31 +98,57 @@ void CRobotAI::think()
                 else if (sharpIRFoundHit(SHARPIR_RIGHT_FW, 20))
                     digitalWrite(PIN_LED_GREEN_RIGHT, HIGH);
 
-                turnAngle = findTurnAngle();
-                setState(STATE_INITTURN);
+                motors.moveDistCm(CRUISE_SPEED - 20, 15, MDIR_BWD);
+                setState(STATE_BACKOFF);
             }
             else if (sharpIRFoundHit(SHARPIR_LEFT, 25) || /*sharpIRFoundHit(SHARPIR_LEFT_FW, 20)*/
                      sharpIRFoundHit(SHARPIR_RIGHT_FW, 40))
             {
                 motors.setLeftSpeed(CRUISE_SPEED + 15);
-                motors.setRightSpeed(CRUISE_SPEED - 40);
+                motors.setRightSpeed(0/*CRUISE_SPEED - 40*/);
+                digitalWrite(PIN_LED_YELLOW_LEFT, HIGH);
                 resetDriveTime = curtime + 750;
             }
             else if (sharpIRFoundHit(SHARPIR_RIGHT, 25) || /*sharpIRFoundHit(SHARPIR_RIGHT_FW, 20)*/
                      sharpIRFoundHit(SHARPIR_LEFT_FW, 40))
             {
-                motors.setLeftSpeed(CRUISE_SPEED - 40);
+                motors.setLeftSpeed(/*CRUISE_SPEED - 40*/0);
                 motors.setRightSpeed(CRUISE_SPEED + 15);
+                digitalWrite(PIN_LED_YELLOW_RIGHT, HIGH);
+                resetDriveTime = curtime + 750;
+            }
+            else if (sharpIRFoundHit(SHARPIR_LEFT, 35))
+            {
+                motors.setLeftSpeed(CRUISE_SPEED + 15);
+                motors.setRightSpeed(MIN_MOTOR_POWER);
+                digitalWrite(PIN_LED_YELLOW_LEFT, HIGH);
+                resetDriveTime = curtime + 750;
+            }
+            else if (sharpIRFoundHit(SHARPIR_RIGHT, 35))
+            {
+                motors.setLeftSpeed(MIN_MOTOR_POWER);
+                motors.setRightSpeed(CRUISE_SPEED + 15);
+                digitalWrite(PIN_LED_YELLOW_RIGHT, HIGH);
                 resetDriveTime = curtime + 750;
             }
             else if (resetDriveTime && (resetDriveTime < millis()))
             {
                 motors.setLeftSpeed(CRUISE_SPEED);
                 motors.setRightSpeed(CRUISE_SPEED);
+                digitalWrite(PIN_LED_YELLOW_LEFT, LOW);
+                digitalWrite(PIN_LED_YELLOW_RIGHT, LOW);
                 resetDriveTime = 0;
             }
 
             resetSharpIRSensors();
+        }
+    }
+    else if (state == STATE_BACKOFF)
+    {
+        if (motors.distanceReached())
+        {
+            turnAngle = findTurnAngle();
+            setState(STATE_INITTURN);
         }
     }
     else if (state == STATE_INITTURN)
