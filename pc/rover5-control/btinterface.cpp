@@ -59,7 +59,7 @@ void CBTInterface::btHasData()
 
     recBuffer += bluetoothSocket->readAll();
 
-    int msgstartind = recBuffer.indexOf(MSG_BT_STARTMARKER);
+    int msgstartind = recBuffer.indexOf(MSG_STARTMARKER);
     if (msgstartind == -1)
     {
         recBuffer.clear(); // No message start detected, remove dirt
@@ -83,14 +83,14 @@ void CBTInterface::btHasData()
             return; // wait for more
 
         // End marker present?
-        if (recBuffer.at(msgsize + extramsgsize - 1) == MSG_BT_ENDMARKER)
+        if (recBuffer.at(msgsize + extramsgsize - 1) == MSG_ENDMARKER)
         {
             emit msgReceived(static_cast<EMessage>((int)recBuffer[2]),
                     recBuffer.mid(3, msgsize-1));
         }
 
         recBuffer.remove(0, msgsize + extramsgsize);
-        msgstartind = recBuffer.indexOf(MSG_BT_STARTMARKER);
+        msgstartind = recBuffer.indexOf(MSG_STARTMARKER);
     }
 
     /*while (bluetoothSocket->canReadLine())
@@ -166,14 +166,14 @@ void CBTInterface::send(const QByteArray &data)
 
 CBTMessage::CBTMessage(EMessage m)
 {
-    data.push_back(static_cast<char>(MSG_BT_STARTMARKER));
+    data.push_back(static_cast<char>(MSG_STARTMARKER));
     data.push_back(static_cast<char>(0)); // Message size (to be filled in)
     data.push_back(static_cast<char>(m));
 }
 
 CBTMessage::CBTMessage()
 {
-    data.push_back(static_cast<char>(MSG_BT_STARTMARKER));
+    data.push_back(static_cast<char>(MSG_STARTMARKER));
     data.push_back(static_cast<char>(0)); // Message size (to be filled in)
     data.push_back(static_cast<char>(MSG_NONE)); // to be filled in
 }
@@ -190,6 +190,6 @@ CBTMessage &CBTMessage::operator <<(uint16_t i)
 CBTMessage::operator QByteArray()
 {
     data[1] = data.size() - 2; // Minus size and start marker
-    data.push_back(static_cast<char>(MSG_BT_ENDMARKER));
+    data.push_back(static_cast<char>(MSG_ENDMARKER));
     return data;
 }

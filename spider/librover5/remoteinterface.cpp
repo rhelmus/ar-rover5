@@ -52,6 +52,58 @@ struct SMotorControl
 
 volatile SMotorControl motorControl;
 
+template <uint8_t size> class CSerialSendHelper
+{
+    uint8_t buffer[size];
+
+    uint8_t getLastIndex(void) const { return buffer[buffer[1]] + 1; }
+
+public:
+    void start(EMessage m)
+    {
+        // Format: <msg start marker>, <msg size>, <msg type and other data>, <msg end marker>
+        buffer[0] = MSG_STARTMARKER;
+        buffer[2] = static_cast<uint8_t>(m);
+        buffer[1] = 1; // Message size so far
+    }
+
+    void end(void)
+    {
+        buffer[getLastIndex() + 1] = MSG_ENDMARKER;
+        Serial2.write((const char *)buffer);
+    }
+
+    void pushByte(uint8_t b)
+    {
+        ++buffer[1];
+        buffer[getLastIndex()] = b;
+    }
+
+    void pushBytes(uint8_t *bytes, uint8_t s)
+    {
+        for (uint8_t i=0; i<s; ++i)
+            pushByte(bytes[i]);
+    }
+
+    void pushInt(uint16_t i)
+    {
+        uint8_t buf[2];
+        intToBytes(i, buf);
+        pushBytes(buf, 2);
+    }
+
+    void pushLong(uint32_t l)
+    {
+        uint8_t buf[4];
+        longToBytes(l, buf);
+        pushBytes(buf, 4);
+    }
+
+    void pushFloat(float f)
+    {
+        pushLong(static_cast<int32_t>(f * 1000.0)); // 3 decimal accuracy
+    }
+};
 
 void getPitchRollHeading(int16_t &p, int16_t &r, uint16_t &h)
 {
@@ -77,38 +129,6 @@ void getPitchRollHeading(int16_t &p, int16_t &r, uint16_t &h)
         getCompass().m_max.z = getCompass().m.z;
 
     h = getCompass().heading();
-}
-
-void TWIStartMessage(EMessage m)
-{
-    Wire.beginTransmission(BRIDGE_TWI_ADDRESS);
-    Wire.write(m);
-}
-
-void TWIRequest(EMessage m, uint16_t n)
-{
-    TWIStartMessage(m);
-    Wire.endTransmission();
-    Wire.requestFrom(BRIDGE_TWI_ADDRESS, n);
-}
-
-void TWISendInt(uint16_t i)
-{
-    uint8_t buf[2];
-    intToBytes(i, buf);
-    Wire.write(buf, 2);
-}
-
-void TWISendLong(uint32_t i)
-{
-    uint8_t buf[4];
-    longToBytes(i, buf);
-    Wire.write(buf, 4);
-}
-
-void TWISendFloat(float f)
-{
-    TWISendLong(static_cast<int32_t>(f * 1000.0)); // 3 decimal accuracy
 }
 
 void TWIReceiveCB(int bytes)
@@ -198,8 +218,7 @@ void TWIReceiveCB(int bytes)
 
 void CRemoteInterface::init()
 {
-    Wire.begin(SPIDER_TWI_ADDRESS);
-    Wire.onReceive(TWIReceiveCB);
+    Serial2.begin(115200);
 }
 
 void CRemoteInterface::update()
@@ -260,68 +279,70 @@ void CRemoteInterface::update()
     {
         statusSendDelay = curtime + 500;
 
-        TWIStartMessage(MSG_SHARPIR);
+        CSerialSendHelper<24> sender; // NOTE: increase if larger messages are desired
+
+        sender.start(MSG_SHARPIR);
         for (uint8_t i=0; i<SHARPIR_END; ++i)
-            Wire.write(sharpIR[i].getAvgDist());
-        Wire.endTransmission();
+            sender.pushByte(sharpIR[i].getAvgDist());
+        sender.end();
 
-        TWIStartMessage(MSG_MOTOR_TARGETPOWER);
+        sender.start(MSG_MOTOR_TARGETPOWER);
         for (uint8_t i=0; i<MOTOR_END; ++i)
-            Wire.write(motors.getTargetPower(static_cast<EMotor>(i)));
-        Wire.endTransmission();
+            sender.pushByte(motors.getTargetPower(static_cast<EMotor>(i)));
+        sender.end();
 
-        TWIStartMessage(MSG_MOTOR_SETPOWER);
+        sender.start(MSG_MOTOR_SETPOWER);
         for (uint8_t i=0; i<MOTOR_END; ++i)
-            Wire.write(motors.getSetPower(static_cast<EMotor>(i)));
-        Wire.endTransmission();
+            sender.pushByte(motors.getSetPower(static_cast<EMotor>(i)));
+        sender.end();
 
-        TWIStartMessage(MSG_MOTOR_TARGETSPEED);
+        sender.start(MSG_MOTOR_TARGETSPEED);
         for (uint8_t i=0; i<MOTOR_END; ++i)
-            TWISendInt(motors.getTargetSpeed(static_cast<EMotor>(i)));
-        Wire.endTransmission();
+            sender.pushInt(motors.getTargetSpeed(static_cast<EMotor>(i)));
+        sender.end();
 
-        TWIStartMessage(MSG_MOTOR_TARGETDIST);
+        sender.start(MSG_MOTOR_TARGETDIST);
         for (uint8_t i=0; i<MOTOR_END; ++i)
-            TWISendLong(motors.getTargetDistance(static_cast<EMotor>(i)));
-        Wire.endTransmission();
+            sender.pushLong(motors.getTargetDistance(static_cast<EMotor>(i)));
+        sender.end();
 
-        TWIStartMessage(MSG_MOTOR_CURRENT);
+        sender.start(MSG_MOTOR_CURRENT);
         for (uint8_t i=0; i<MOTOR_END; ++i)
-            TWISendInt(motors.getCurrent(static_cast<EMotor>(i)));
-        Wire.endTransmission();
+            sender.pushInt(motors.getCurrent(static_cast<EMotor>(i)));
+        sender.end();
 
-        TWIStartMessage(MSG_ENCODER_SPEED);
+        sender.start(MSG_ENCODER_SPEED);
         for (uint8_t i=0; i<ENC_END; ++i)
-            TWISendInt(encoders.getSpeed(static_cast<EEncoder>(i)));
-        Wire.endTransmission();
+            sender.pushInt(encoders.getSpeed(static_cast<EEncoder>(i)));
+        sender.end();
 
-        TWIStartMessage(MSG_ENCODER_DISTANCE);
+        sender.start(MSG_ENCODER_DISTANCE);
         for (uint8_t i=0; i<ENC_END; ++i)
-            TWISendLong(encoders.getAbsDist(static_cast<EEncoder>(i)));
-        Wire.endTransmission();
+            sender.pushLong(encoders.getAbsDist(static_cast<EEncoder>(i)));
+        sender.end();
 
-        TWIStartMessage(MSG_ODOMETRY);
-        TWISendFloat(encoders.getXPos());
-        TWISendFloat(encoders.getYPos());
-        TWISendFloat(encoders.getRotation());
-        Wire.endTransmission();
+        sender.start(MSG_ODOMETRY);
+        sender.pushFloat(encoders.getXPos());
+        sender.pushFloat(encoders.getYPos());
+        sender.pushFloat(encoders.getRotation());
+        sender.end();
 
-        TWIStartMessage(MSG_SERVO);
-        Wire.write(getLowerServo().read());
-        Wire.endTransmission();
+        sender.start(MSG_SERVO);
+        sender.pushByte(getLowerServo().read());
+        sender.end();
 
-        TWIStartMessage(MSG_BATTERY);
-        TWISendInt(analogRead(PIN_BATTERY)); // UNDONE
-        Wire.endTransmission();
+        sender.start(MSG_BATTERY);
+        sender.pushInt(analogRead(PIN_BATTERY)); // UNDONE
+        sender.end();
 
         // UNDONE
         int16_t pitch, roll;
         uint16_t heading;
         getPitchRollHeading(pitch, roll, heading);
-        TWIStartMessage(MSG_IMU);
-        TWISendInt(pitch);
-        TWISendInt(roll);
-        TWISendInt(heading);
-        Wire.endTransmission();
+        sender.start(MSG_IMU);
+        sender.pushInt(pitch);
+        sender.pushInt(roll);
+        sender.pushInt(heading);
+        sender.end();
     }
 }

@@ -41,7 +41,7 @@ void TWIReceive(int bytes)
     {
         if (serialBluetooth.connected)
         {
-            TWIPassBuffer.push(MSG_BT_STARTMARKER);
+            TWIPassBuffer.push(MSG_STARTMARKER);
             TWIPassBuffer.push(bytes + 1);
             TWIPassBuffer.push(msg);
         }
@@ -56,7 +56,7 @@ void TWIReceive(int bytes)
         }
 
         if (serialBluetooth.connected)
-            TWIPassBuffer.push(MSG_BT_ENDMARKER);
+            TWIPassBuffer.push(MSG_ENDMARKER);
     }
     else // Discard any data from other (unknown) messages
     {
@@ -123,7 +123,7 @@ void loop()
             {
                 const uint8_t b = serialBluetooth.read();
                 if (!receivedBTStart)
-                    receivedBTStart = (b == MSG_BT_STARTMARKER);
+                    receivedBTStart = (b == MSG_STARTMARKER);
                 else if (!receivedBTMSGSize)
                 {
                     receivedBTMSGSize = true;
@@ -139,7 +139,7 @@ void loop()
                 else
                 {
                     // Msg got through OK?
-                    if (b == MSG_BT_ENDMARKER)
+                    if (b == MSG_ENDMARKER)
                     {
                         // First check special cases that are not passed through
                         if (curbtmessage == MSG_PONG)
@@ -186,10 +186,10 @@ void loop()
         pinguptime = curtime + 500;
         if (serialBluetooth.connected)
         {
-            TWIPassBuffer.push(MSG_BT_STARTMARKER);
+            TWIPassBuffer.push(MSG_STARTMARKER);
             TWIPassBuffer.push(1);
             TWIPassBuffer.push(MSG_PING);
-            TWIPassBuffer.push(MSG_BT_ENDMARKER);
+            TWIPassBuffer.push(MSG_ENDMARKER);
         }
     }
 }

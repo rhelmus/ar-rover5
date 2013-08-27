@@ -38,9 +38,9 @@ enum EMessage
     MSG_PONG, // Ping response from control to bridge
     MSG_CNTRL_DISCONNECT,
 
-    // Bluetooth specific
-    MSG_BT_STARTMARKER,
-    MSG_BT_ENDMARKER,
+    // Serial markers
+    MSG_STARTMARKER,
+    MSG_ENDMARKER,
 
     MSG_NONE,
 
