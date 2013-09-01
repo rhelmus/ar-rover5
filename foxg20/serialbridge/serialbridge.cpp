@@ -1,4 +1,5 @@
 #include "serialbridge.h"
+#include "tcpserver.h"
 
 #include <QDebug>
 
@@ -20,6 +21,9 @@ CSerialBridge::CSerialBridge(const QString &port, QObject *parent) :
         qDebug() << "Error: " << serialPort->errorString();
         qFatal("Bailing out...");
     }
+
+    tcpServer = new CTcpServer(this);
+    connect(tcpServer, SIGNAL(dataReceived(const QByteArray &)), SLOT(readTcp(const QByteArray &)));
 }
 
 void CSerialBridge::handleSerialError(QSerialPort::SerialPortError)
@@ -30,5 +34,10 @@ void CSerialBridge::handleSerialError(QSerialPort::SerialPortError)
 
 void CSerialBridge::readSerial()
 {
-    printf("%s", serialPort->readAll().constData());
+    tcpServer->send(serialPort->readAll());
+}
+
+void CSerialBridge::readTcp(const QByteArray &ba)
+{
+    serialPort->write(ba);
 }

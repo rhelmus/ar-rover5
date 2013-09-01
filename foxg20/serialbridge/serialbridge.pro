@@ -8,6 +8,8 @@ QT       += core
 
 QT       -= gui
 
+QT += network
+
 TARGET = serialbridge
 CONFIG   += console
 CONFIG   -= app_bundle
@@ -18,8 +20,10 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp \
-    serialbridge.cpp
+    serialbridge.cpp \
+    tcpserver.cpp
 
 HEADERS += \
     serialbridge.h \
-    ../../shared/shared.h
+    ../../shared/shared.h \
+    tcpserver.h
