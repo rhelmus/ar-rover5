@@ -23,7 +23,7 @@ set(FIRMWARE_NAME wander)
 
 set(${FIRMWARE_NAME}_BOARD mega)               # Arduino Target board
 set(${FIRMWARE_NAME}_SRCS robotai.cpp wander.cpp)  # Firmware sources
-set(${FIRMWARE_NAME}_PORT /dev/ttyUSB0)            # Serial upload port
+set(${FIRMWARE_NAME}_PORT /dev/ttyUSB1)            # Serial upload port
 
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../../../sketches/libraries)
 

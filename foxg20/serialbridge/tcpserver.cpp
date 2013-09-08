@@ -6,7 +6,7 @@
 CTcpServer::CTcpServer(QObject *parent) : QObject(parent)
 {
     tcpServer = new QTcpServer(this);
-    if (!tcpServer->listen(QHostAddress::Any, 40000))
+    if (!tcpServer->listen(QHostAddress::Any, 40001))
     {
         qCritical() << "Failed to start server:" << tcpServer->errorString();
         QCoreApplication::exit(1);

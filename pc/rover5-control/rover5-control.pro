@@ -21,7 +21,8 @@ SOURCES += main.cpp\
     utils.cpp \
     drivewidget.cpp \
     scaledpixmapwidget.cpp \
-    mapscene.cpp
+    mapscene.cpp \
+    tcpclientinterface.cpp
 
 HEADERS  += rover5control.h \
     ../../shared/tcputils.h \
@@ -31,7 +32,8 @@ HEADERS  += rover5control.h \
     utils.h \
     drivewidget.h \
     scaledpixmapwidget.h \
-    mapscene.h
+    mapscene.h \
+    tcpclientinterface.h
 
 OTHER_FILES +=
 

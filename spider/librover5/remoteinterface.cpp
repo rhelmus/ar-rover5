@@ -12,6 +12,8 @@
 
 CRemoteInterface remoteInterface;
 
+#define REM_SERIAL Serial
+
 namespace {
 
 struct SMotorControl
@@ -56,7 +58,7 @@ template <uint8_t size> class CSerialSendHelper
 {
     uint8_t buffer[size];
 
-    uint8_t getLastIndex(void) const { return buffer[buffer[1]] + 1; }
+    uint8_t getLastIndex(void) const { return buffer[1] + 1; }
 
 public:
     void start(EMessage m)
@@ -70,7 +72,7 @@ public:
     void end(void)
     {
         buffer[getLastIndex() + 1] = MSG_ENDMARKER;
-        Serial2.write((const char *)buffer);
+        REM_SERIAL.write(buffer, getLastIndex() + 2);
     }
 
     void pushByte(uint8_t b)
@@ -216,6 +218,254 @@ void TWIReceiveCB(int bytes)
 }
 
 
+void CRemoteInterface::updateMotorControl()
+{
+    if (motorControl.moveType == SMotorControl::MOVE_STRAIGHT)
+    {
+        if (!motorControl.distance)
+        {
+            motors.setLeftDirection(motorControl.mdirLeft);
+            motors.setRightDirection(motorControl.mdirRight);
+            motors.setLeftSpeed(motorControl.leftSpeed);
+            motors.setRightSpeed(motorControl.rightSpeed);
+            if (motorControl.duration)
+                motors.setDuration(motorControl.duration * 1000);
+        }
+        else
+        {
+            motors.moveDistCm(motorControl.driveSpeed, motorControl.distance,
+                              motorControl.driveDir);
+        }
+    }
+    else if (motorControl.moveType == SMotorControl::MOVE_TURN)
+    {
+        if (!motorControl.angle)
+        {
+            motors.turn(motorControl.turnSpeed, motorControl.turnDir);
+            if (motorControl.duration)
+                motors.setDuration(motorControl.duration * 1000);
+        }
+        else
+            motors.turnAngle(motorControl.turnSpeed, motorControl.angle,
+                             motorControl.turnDir);
+    }
+#ifdef MECANUM_MOVEMENT
+    else if (motorControl.moveType == SMotorControl::MOVE_TRANSLATE)
+    {
+        if (!motorControl.distance)
+        {
+            motors.translate(motorControl.translateSpeed, motorControl.translateDir);
+            if (motorControl.duration)
+                motors.setDuration(motorControl.duration * 1000);
+        }
+        else
+            motors.translateCm(motorControl.translateSpeed, motorControl.distance,
+                               motorControl.translateDir);
+    }
+#endif
+    else // MOVE_NONE
+        motors.stop();
+}
+
+void CRemoteInterface::sendStatus()
+{
+    CSerialSendHelper<24> sender; // NOTE: increase if larger messages are desired
+
+    // Don't send everything at once, divide it in blocks to prevent blocking the processor
+    sender.start(MSG_SHARPIR);
+    for (uint8_t i=0; i<SHARPIR_END; ++i)
+        sender.pushByte(sharpIR[i].getAvgDist());
+    sender.end();
+
+    sender.start(MSG_MOTOR_TARGETPOWER);
+    for (uint8_t i=0; i<MOTOR_END; ++i)
+        sender.pushByte(motors.getTargetPower(static_cast<EMotor>(i)));
+    sender.end();
+
+    sender.start(MSG_MOTOR_SETPOWER);
+    for (uint8_t i=0; i<MOTOR_END; ++i)
+        sender.pushByte(motors.getSetPower(static_cast<EMotor>(i)));
+    sender.end();
+
+    sender.start(MSG_MOTOR_TARGETSPEED);
+    for (uint8_t i=0; i<MOTOR_END; ++i)
+        sender.pushInt(motors.getTargetSpeed(static_cast<EMotor>(i)));
+    sender.end();
+
+    sender.start(MSG_MOTOR_TARGETDIST);
+    for (uint8_t i=0; i<MOTOR_END; ++i)
+        sender.pushLong(motors.getTargetDistance(static_cast<EMotor>(i)));
+    sender.end();
+
+    sender.start(MSG_MOTOR_CURRENT);
+    for (uint8_t i=0; i<MOTOR_END; ++i)
+        sender.pushInt(motors.getCurrent(static_cast<EMotor>(i)));
+    sender.end();
+
+    sender.start(MSG_ENCODER_SPEED);
+    for (uint8_t i=0; i<ENC_END; ++i)
+        sender.pushInt(encoders.getSpeed(static_cast<EEncoder>(i)));
+    sender.end();
+
+    sender.start(MSG_ENCODER_DISTANCE);
+    for (uint8_t i=0; i<ENC_END; ++i)
+        sender.pushLong(encoders.getAbsDist(static_cast<EEncoder>(i)));
+    sender.end();
+
+    sender.start(MSG_ODOMETRY);
+    sender.pushFloat(encoders.getXPos());
+    sender.pushFloat(encoders.getYPos());
+    sender.pushFloat(encoders.getRotation());
+    sender.end();
+
+    sender.start(MSG_SERVO);
+    sender.pushByte(getLowerServo().read());
+    sender.end();
+
+    sender.start(MSG_BATTERY);
+    sender.pushInt(analogRead(PIN_BATTERY)); // UNDONE
+    sender.end();
+
+    // UNDONE
+    int16_t pitch, roll;
+    uint16_t heading;
+    getPitchRollHeading(pitch, roll, heading);
+    sender.start(MSG_IMU);
+    sender.pushInt(pitch);
+    sender.pushInt(roll);
+    sender.pushInt(heading);
+    sender.end();
+}
+
+void CRemoteInterface::checkForCommands()
+{
+    while (REM_SERIAL.available())
+    {
+        const uint8_t b = REM_SERIAL.read();
+        if (!receivedSerRecMsgStart)
+            receivedSerRecMsgStart = (b == MSG_STARTMARKER);
+        else if (!receivedSerRecMsgSize)
+        {
+            receivedSerRecMsgSize = true;
+            serRecMsgSize = b;
+        }
+        else if (serRecMsgBytesRead < serRecMsgSize)
+        {
+            if (currentSerRecMsg == MSG_NONE)
+                currentSerRecMsg = static_cast<EMessage>(b);
+            else
+                tempSerialMsgBuffer.push(b);
+            ++serRecMsgBytesRead;
+        }
+        else
+        {
+            // Msg got through OK?
+            if (b == MSG_ENDMARKER)
+            {
+                // UNDONE
+#if 0
+                // First check special cases that are not passed through
+                if (currentSerRecMsg == MSG_PONG)
+                {
+                    tempSerialMsgBuffer.clear();
+//                            wdt_reset();
+                }
+                else if (currentSerRecMsg == MSG_CNTRL_DISCONNECT)
+                {
+                    tempSerialMsgBuffer.clear();
+                    Serial.println("cntrl disconnect");
+                    btConnected = false;
+                    // Wait for a bit for actual disconnection before
+                    // updating status
+                    ignoreconupdatedelay = curtime + 3000;
+                }
+                else
+#endif
+                {
+                    handleCommand(currentSerRecMsg);
+                }
+            }
+
+            receivedSerRecMsgStart = receivedSerRecMsgSize = false;
+            serRecMsgSize = 0;
+            serRecMsgBytesRead = 0;
+            currentSerRecMsg = MSG_NONE;
+            tempSerialMsgBuffer.clear();
+        }
+    }
+}
+
+void CRemoteInterface::handleCommand(EMessage cmd)
+{
+    if (cmd == MSG_CMD_MOTORSPEED)
+    {
+        motorControl.update = true;
+        motorControl.leftSpeed = tempSerialMsgBuffer.pop();
+        motorControl.rightSpeed = tempSerialMsgBuffer.pop();
+        motorControl.mdirLeft = static_cast<EMotorDirection>(tempSerialMsgBuffer.pop());
+        motorControl.mdirRight = static_cast<EMotorDirection>(tempSerialMsgBuffer.pop());
+        motorControl.duration = bytesToInt(tempSerialMsgBuffer.pop(), tempSerialMsgBuffer.pop());
+        motorControl.distance = 0;
+        motorControl.moveType = SMotorControl::MOVE_STRAIGHT;
+    }
+    else if (cmd == MSG_CMD_DRIVEDIST)
+    {
+        motorControl.update = true;
+        motorControl.driveSpeed = tempSerialMsgBuffer.pop();
+        motorControl.distance = bytesToInt(tempSerialMsgBuffer.pop(), tempSerialMsgBuffer.pop());
+        motorControl.driveDir = static_cast<EMotorDirection>(tempSerialMsgBuffer.pop());
+        motorControl.duration = 0;
+        motorControl.moveType = SMotorControl::MOVE_STRAIGHT;
+    }
+    else if (cmd == MSG_CMD_TURN)
+    {
+        motorControl.update = true;
+        motorControl.turnSpeed = tempSerialMsgBuffer.pop();
+        motorControl.turnDir = static_cast<ETurnDirection>(tempSerialMsgBuffer.pop());
+        motorControl.duration = bytesToInt(tempSerialMsgBuffer.pop(), tempSerialMsgBuffer.pop());
+        motorControl.moveType = SMotorControl::MOVE_TURN;
+        motorControl.angle = 0;
+    }
+    else if (cmd == MSG_CMD_TURNANGLE)
+    {
+        motorControl.update = true;
+        motorControl.turnSpeed = tempSerialMsgBuffer.pop();
+        motorControl.angle = bytesToInt(tempSerialMsgBuffer.pop(), tempSerialMsgBuffer.pop());
+        motorControl.turnDir = static_cast<ETurnDirection>(tempSerialMsgBuffer.pop());
+        motorControl.duration = 0;
+        motorControl.moveType = SMotorControl::MOVE_TURN;
+    }
+#ifdef MECANUM_MOVEMENT
+    else if (cmd == MSG_CMD_TRANSLATE)
+    {
+        motorControl.update = true;
+        motorControl.translateSpeed = tempSerialMsgBuffer.pop();
+        motorControl.translateDir = static_cast<ETranslateDirection>(tempSerialMsgBuffer.pop());
+        motorControl.duration = bytesToInt(tempSerialMsgBuffer.pop(), tempSerialMsgBuffer.pop());
+        motorControl.moveType = SMotorControl::MOVE_TRANSLATE;
+        motorControl.distance = 0;
+    }
+    else if (cmd == MSG_CMD_TRANSLATEDIST)
+    {
+        motorControl.update = true;
+        motorControl.translateSpeed = tempSerialMsgBuffer.pop();
+        motorControl.distance = bytesToInt(tempSerialMsgBuffer.pop(), tempSerialMsgBuffer.pop());
+        motorControl.translateDir = static_cast<ETranslateDirection>(tempSerialMsgBuffer.pop());
+        motorControl.duration = 0;
+        motorControl.moveType = SMotorControl::MOVE_TRANSLATE;
+    }
+#endif
+    else if (cmd == MSG_CMD_STOP)
+    {
+        motorControl.update = true;
+        motorControl.moveType = SMotorControl::MOVE_NONE;
+    }
+    else if (cmd == MSG_CMD_FRONTLEDS)
+    {
+        digitalWrite(PIN_FRONTLEDS, tempSerialMsgBuffer.pop());
+    }
+}
+
 void CRemoteInterface::init()
 {
     Serial2.begin(115200);
@@ -225,52 +475,7 @@ void CRemoteInterface::update()
 {
     if (motorControl.update)
     {
-        if (motorControl.moveType == SMotorControl::MOVE_STRAIGHT)
-        {
-            if (!motorControl.distance)
-            {
-                motors.setLeftDirection(motorControl.mdirLeft);
-                motors.setRightDirection(motorControl.mdirRight);
-                motors.setLeftSpeed(motorControl.leftSpeed);
-                motors.setRightSpeed(motorControl.rightSpeed);
-                if (motorControl.duration)
-                    motors.setDuration(motorControl.duration * 1000);
-            }
-            else
-            {
-                motors.moveDistCm(motorControl.driveSpeed, motorControl.distance,
-                                  motorControl.driveDir);
-            }
-        }
-        else if (motorControl.moveType == SMotorControl::MOVE_TURN)
-        {
-            if (!motorControl.angle)
-            {
-                motors.turn(motorControl.turnSpeed, motorControl.turnDir);
-                if (motorControl.duration)
-                    motors.setDuration(motorControl.duration * 1000);
-            }
-            else
-                motors.turnAngle(motorControl.turnSpeed, motorControl.angle,
-                                 motorControl.turnDir);
-        }
-#ifdef MECANUM_MOVEMENT
-        else if (motorControl.moveType == SMotorControl::MOVE_TRANSLATE)
-        {
-            if (!motorControl.distance)
-            {
-                motors.translate(motorControl.translateSpeed, motorControl.translateDir);
-                if (motorControl.duration)
-                    motors.setDuration(motorControl.duration * 1000);
-            }
-            else
-                motors.translateCm(motorControl.translateSpeed, motorControl.distance,
-                                   motorControl.translateDir);
-        }
-#endif
-        else // MOVE_NONE
-            motors.stop();
-
+        updateMotorControl();
         motorControl.update = false;
     }
 
@@ -278,71 +483,9 @@ void CRemoteInterface::update()
     if (curtime > statusSendDelay)
     {
         statusSendDelay = curtime + 500;
-
-        CSerialSendHelper<24> sender; // NOTE: increase if larger messages are desired
-
-        sender.start(MSG_SHARPIR);
-        for (uint8_t i=0; i<SHARPIR_END; ++i)
-            sender.pushByte(sharpIR[i].getAvgDist());
-        sender.end();
-
-        sender.start(MSG_MOTOR_TARGETPOWER);
-        for (uint8_t i=0; i<MOTOR_END; ++i)
-            sender.pushByte(motors.getTargetPower(static_cast<EMotor>(i)));
-        sender.end();
-
-        sender.start(MSG_MOTOR_SETPOWER);
-        for (uint8_t i=0; i<MOTOR_END; ++i)
-            sender.pushByte(motors.getSetPower(static_cast<EMotor>(i)));
-        sender.end();
-
-        sender.start(MSG_MOTOR_TARGETSPEED);
-        for (uint8_t i=0; i<MOTOR_END; ++i)
-            sender.pushInt(motors.getTargetSpeed(static_cast<EMotor>(i)));
-        sender.end();
-
-        sender.start(MSG_MOTOR_TARGETDIST);
-        for (uint8_t i=0; i<MOTOR_END; ++i)
-            sender.pushLong(motors.getTargetDistance(static_cast<EMotor>(i)));
-        sender.end();
-
-        sender.start(MSG_MOTOR_CURRENT);
-        for (uint8_t i=0; i<MOTOR_END; ++i)
-            sender.pushInt(motors.getCurrent(static_cast<EMotor>(i)));
-        sender.end();
-
-        sender.start(MSG_ENCODER_SPEED);
-        for (uint8_t i=0; i<ENC_END; ++i)
-            sender.pushInt(encoders.getSpeed(static_cast<EEncoder>(i)));
-        sender.end();
-
-        sender.start(MSG_ENCODER_DISTANCE);
-        for (uint8_t i=0; i<ENC_END; ++i)
-            sender.pushLong(encoders.getAbsDist(static_cast<EEncoder>(i)));
-        sender.end();
-
-        sender.start(MSG_ODOMETRY);
-        sender.pushFloat(encoders.getXPos());
-        sender.pushFloat(encoders.getYPos());
-        sender.pushFloat(encoders.getRotation());
-        sender.end();
-
-        sender.start(MSG_SERVO);
-        sender.pushByte(getLowerServo().read());
-        sender.end();
-
-        sender.start(MSG_BATTERY);
-        sender.pushInt(analogRead(PIN_BATTERY)); // UNDONE
-        sender.end();
-
-        // UNDONE
-        int16_t pitch, roll;
-        uint16_t heading;
-        getPitchRollHeading(pitch, roll, heading);
-        sender.start(MSG_IMU);
-        sender.pushInt(pitch);
-        sender.pushInt(roll);
-        sender.pushInt(heading);
-        sender.end();
+        sendStatus();
     }
+
+    if (REM_SERIAL.available())
+        checkForCommands();
 }

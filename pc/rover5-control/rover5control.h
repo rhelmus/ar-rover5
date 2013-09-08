@@ -16,10 +16,10 @@ class QSlider;
 class QTcpServer;
 class QTcpSocket;
 
-class CBTInterface;
 class CMapScene;
 class CNumStatWidget;
 class CScaledPixmapWidget;
+class CTcpClientInterface;
 
 class CRover5Control : public QMainWindow
 {
@@ -28,7 +28,7 @@ class CRover5Control : public QMainWindow
     enum { DRIVE_TIME = 1 };
 
     QAction *toggleFrontLEDsAction;
-    QLabel *btConnectedStatLabel, *tcpConnectedStatLabel;
+    QLabel *tcpClientConnectedStatLabel, *camConnectedStatLabel;
 
     CScaledPixmapWidget *camWidget;
 
@@ -46,12 +46,12 @@ class CRover5Control : public QMainWindow
 
     CMapScene *mapScene;
 
-    QTcpServer *tcpServer;
-    QSignalMapper *tcpDisconnectMapper;
-    QTcpSocket *tcpClientSocket;
-    uint32_t tcpReadBlockSize;
+    QTcpServer *camServer;
+    QSignalMapper *camTcpDisconnectMapper;
+    QTcpSocket *camClientSocket;
+    uint32_t camTcpReadBlockSize;
 
-    CBTInterface *btInterface;
+    CTcpClientInterface *tcpClientInterface;
     QTime lastPingTime;
 
     QWidget *createStatusWidgets(void);
@@ -60,18 +60,18 @@ class CRover5Control : public QMainWindow
     QWidget *createCameraTab(void);
     QWidget *createMapTab(void);
 
-    void initTcpServer(void);
-    bool canSendTcp(void) const;
-    void parseTcp(QDataStream &stream);
+    void initCamServer(void);
+    bool canSendCamTcp(void) const;
+    void parseCamTcp(QDataStream &stream);
 
 private slots:
-    void tcpClientConnected(void);
-    void tcpClientDisconnected(QObject *obj);
-    void tcpClientHasData(void);
-    void toggleBtConnection(void);
+    void handleCamClientConnect(void);
+    void handleCamClientDisconnect(QObject *obj);
+    void camClientHasData(void);
+    void toggleTcpClientConnection(void);
     void toggleFrontLEDs(void);
-    void btConnected(void);
-    void btDisconnected(void);
+    void tcpClientConnected(void);
+    void tcpClientDisconnected(void);
     void btMsgReceived(EMessage m, QByteArray data);
     void applyDriveUpdate(CDriveWidget::DriveFlags dir, int drivespeed);
     void driveContinuous(int speed, int duration, EMotorDirection dir);
@@ -81,9 +81,6 @@ private slots:
     void stopDrive(void);
     void applyCamZoom(void);
 
-protected:
-    virtual void closeEvent(QCloseEvent *event);
-    
 public:
     CRover5Control(QWidget *parent = 0);
     ~CRover5Control(void);

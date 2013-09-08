@@ -50,8 +50,9 @@ void initRover5()
     // From http://arduino.cc/en/Reference/Random
     randomSeed(analogRead(PIN_RANDOM));
 
-    // Also initializes Wire
     remoteInterface.init();
+
+    Wire.begin(SPIDER_TWI_ADDRESS);
 
 #if 1
     compass.init();

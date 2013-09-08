@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
     if (args.size() < 2)
         qFatal("Please specify server port.");
     
-    CSerialBridge sb(args.at(2), &a);
+    CSerialBridge sb(args.at(1), &a);
 
     return a.exec();
 }

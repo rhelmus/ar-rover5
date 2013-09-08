@@ -1,9 +1,9 @@
 #include "../../shared/tcputils.h"
-#include "btinterface.h"
 #include "mapscene.h"
 #include "numstatwidget.h"
 #include "rover5control.h"
 #include "scaledpixmapwidget.h"
+#include "tcpclientinterface.h"
 #include "utils.h"
 
 #include <QtGui>
@@ -11,7 +11,7 @@
 #include <QTcpSocket>
 
 CRover5Control::CRover5Control(QWidget *parent)
-    : QMainWindow(parent), tcpClientSocket(0), tcpReadBlockSize(0)
+    : QMainWindow(parent), camClientSocket(0), camTcpReadBlockSize(0)
 {
     resize(800, 600);
 
@@ -20,7 +20,7 @@ CRover5Control::CRover5Control(QWidget *parent)
 
     QToolBar *toolb = addToolBar("toolbar");
     toolb->addAction(QIcon(":/resources/connect.png"), "Toggle BT", this,
-                     SLOT(toggleBtConnection()));
+                     SLOT(toggleTcpClientConnection()));
     toolb->addSeparator();
     toggleFrontLEDsAction = toolb->addAction(QIcon(":/resources/light.png"),
                                              "Toggle front LEDs", this,
@@ -35,17 +35,17 @@ CRover5Control::CRover5Control(QWidget *parent)
     grid->addWidget(createViewWidgets(), 0, 1);
     grid->addWidget(createDriveWidgets(), 1, 1);
 
-    statusBar()->addPermanentWidget(btConnectedStatLabel = new QLabel("BT disconnected"));
-    btConnectedStatLabel->setFrameStyle(QFrame::Panel | QFrame::Raised);
-    statusBar()->addPermanentWidget(tcpConnectedStatLabel = new QLabel("TCP disconnected"));
-    tcpConnectedStatLabel->setFrameStyle(QFrame::Panel | QFrame::Raised);
+    statusBar()->addPermanentWidget(tcpClientConnectedStatLabel = new QLabel("TCP disconnected"));
+    tcpClientConnectedStatLabel->setFrameStyle(QFrame::Panel | QFrame::Raised);
+    statusBar()->addPermanentWidget(camConnectedStatLabel = new QLabel("cam disconnected"));
+    camConnectedStatLabel->setFrameStyle(QFrame::Panel | QFrame::Raised);
 
-    initTcpServer();
+    initCamServer();
 
-    btInterface = new CBTInterface(this);
-    connect(btInterface, SIGNAL(connected()), SLOT(btConnected()));
-    connect(btInterface, SIGNAL(disconnected()), SLOT(btDisconnected()));
-    connect(btInterface, SIGNAL(msgReceived(EMessage, QByteArray)),
+    tcpClientInterface = new CTcpClientInterface(this);
+    connect(tcpClientInterface, SIGNAL(connected()), SLOT(tcpClientConnected()));
+    connect(tcpClientInterface, SIGNAL(disconnected()), SLOT(tcpClientDisconnected()));
+    connect(tcpClientInterface, SIGNAL(msgReceived(EMessage, QByteArray)),
             SLOT(btMsgReceived(EMessage, QByteArray)));
 }
 
@@ -208,32 +208,32 @@ QWidget *CRover5Control::createMapTab()
     return ret;
 }
 
-void CRover5Control::initTcpServer()
+void CRover5Control::initCamServer()
 {
-    tcpServer = new QTcpServer(this);
-    if (!tcpServer->listen(QHostAddress::Any, 40000))
+    camServer = new QTcpServer(this);
+    if (!camServer->listen(QHostAddress::Any, 40000))
     {
         QMessageBox::critical(this, tr("Rover5 control"),
-                              tr("Unable to start the server: %1.")
-                              .arg(tcpServer->errorString()));
+                              tr("Unable to start cam server: %1.")
+                              .arg(camServer->errorString()));
         close();
     }
     else
     {
-        connect(tcpServer, SIGNAL(newConnection()), this, SLOT(tcpClientConnected()));
+        connect(camServer, SIGNAL(newConnection()), this, SLOT(handleCamClientConnect()));
 
-        tcpDisconnectMapper = new QSignalMapper(this);
-        connect(tcpDisconnectMapper, SIGNAL(mapped(QObject *)), this,
-                SLOT(tcpClientDisconnected(QObject *)));
+        camTcpDisconnectMapper = new QSignalMapper(this);
+        connect(camTcpDisconnectMapper, SIGNAL(mapped(QObject *)), this,
+                SLOT(handleCamClientDisconnect(QObject *)));
     }
 }
 
-bool CRover5Control::canSendTcp() const
+bool CRover5Control::canSendCamTcp() const
 {
-    return (tcpClientSocket && (tcpClientSocket->state() == QTcpSocket::ConnectedState));
+    return (camClientSocket && (camClientSocket->state() == QTcpSocket::ConnectedState));
 }
 
-void CRover5Control::parseTcp(QDataStream &stream)
+void CRover5Control::parseCamTcp(QDataStream &stream)
 {
     uint8_t tmp;
     stream >> tmp;
@@ -254,90 +254,97 @@ void CRover5Control::parseTcp(QDataStream &stream)
 //    qDebug() << QString("Received msg: %1 (%2 bytes)\n").arg(msg).arg(tcpReadBlockSize);
 }
 
-void CRover5Control::tcpClientConnected()
+void CRover5Control::handleCamClientConnect()
 {
     qDebug("Client connected\n");
 
-    tcpConnectedStatLabel->setText("TCP connected");
-    tcpConnectedStatLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+    camConnectedStatLabel->setText("cam connected");
+    camConnectedStatLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
 
-    if (tcpClientSocket)
-        tcpClientSocket->disconnectFromHost();
+    if (camClientSocket)
+        camClientSocket->disconnectFromHost();
 
-    tcpClientSocket = tcpServer->nextPendingConnection();
-    connect(tcpClientSocket, SIGNAL(disconnected()), tcpDisconnectMapper,
+    camClientSocket = camServer->nextPendingConnection();
+    connect(camClientSocket, SIGNAL(disconnected()), camTcpDisconnectMapper,
             SLOT(map()));
-    connect(tcpClientSocket, SIGNAL(readyRead()), this, SLOT(tcpClientHasData()));
+    connect(camClientSocket, SIGNAL(readyRead()), this, SLOT(camClientHasData()));
 }
 
-void CRover5Control::tcpClientDisconnected(QObject *obj)
+void CRover5Control::handleCamClientDisconnect(QObject *obj)
 {
     // Current client?
-    if (tcpClientSocket == obj)
+    if (camClientSocket == obj)
     {
-        tcpClientSocket = 0;
-        tcpConnectedStatLabel->setText("TCP disconnected");
-        tcpConnectedStatLabel->setFrameStyle(QFrame::Panel | QFrame::Raised);
+        camClientSocket = 0;
+        camConnectedStatLabel->setText("cam disconnected");
+        camConnectedStatLabel->setFrameStyle(QFrame::Panel | QFrame::Raised);
     }
 
     obj->deleteLater();
 }
 
-void CRover5Control::tcpClientHasData()
+void CRover5Control::camClientHasData()
 {
 //    qDebug() << "clientHasData: " << tcpClientSocket->bytesAvailable() << tcpReadBlockSize;
-    QDataStream in(tcpClientSocket);
+    QDataStream in(camClientSocket);
     in.setVersion(QDataStream::Qt_4_7);
 
     while (true)
     {
-        if (tcpReadBlockSize == 0)
+        if (camTcpReadBlockSize == 0)
         {
-            if (tcpClientSocket->bytesAvailable() < (int)sizeof(uint32_t))
+            if (camClientSocket->bytesAvailable() < (int)sizeof(uint32_t))
                 return;
 
-            in >> tcpReadBlockSize;
+            in >> camTcpReadBlockSize;
         }
 
-        if (tcpClientSocket->bytesAvailable() < tcpReadBlockSize)
+        if (camClientSocket->bytesAvailable() < camTcpReadBlockSize)
             return;
 
-        parseTcp(in);
-        tcpReadBlockSize = 0;
+        parseCamTcp(in);
+        camTcpReadBlockSize = 0;
     }
 }
 
-void CRover5Control::toggleBtConnection()
+void CRover5Control::toggleTcpClientConnection()
 {
-    if (btInterface->isConnected())
-        btInterface->disconnectBT();
+    if (tcpClientInterface->isConnected())
+        tcpClientInterface->disconnectFromServer();
     else
-        btInterface->connectBT();
+    {
+        bool ok;
+        const QString s = QInputDialog::getText(this, "Server address",
+                                                "Server address", QLineEdit::Normal,
+                                                "localhost", &ok);
+        if (ok && !s.isEmpty())
+            tcpClientInterface->connectToServer(s);
+    }
 }
 
 void CRover5Control::toggleFrontLEDs()
 {
     static bool togglev = false; // UNDONE!
-    CBTMessage msg(MSG_CMD_FRONTLEDS);
+    CTcpClientMessage msg(MSG_CMD_FRONTLEDS);
     toggleFrontLEDsAction->toggle(); // UNDONE: Check actual state
 //    msg << (uint8_t)toggleFrontLEDsAction->isChecked();
     msg << (uint8_t)(togglev = !togglev);
 
-    btInterface->send(msg);
+    tcpClientInterface->send(msg);
 }
 
-void CRover5Control::btConnected()
+void CRover5Control::tcpClientConnected()
 {
     toggleFrontLEDsAction->setEnabled(true);
-    btConnectedStatLabel->setText("BT connected");
-    btConnectedStatLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+    tcpClientConnectedStatLabel->setText("TCP connected");
+    tcpClientConnectedStatLabel->setFrameStyle(QFrame::Panel | QFrame::Sunken);
 }
 
-void CRover5Control::btDisconnected()
+void CRover5Control::tcpClientDisconnected()
 {
     toggleFrontLEDsAction->setEnabled(false);
-    btConnectedStatLabel->setText("BT disconnected");
-    btConnectedStatLabel->setFrameStyle(QFrame::Panel | QFrame::Raised);
+    tcpClientConnectedStatLabel->setText("TCP disconnected");
+    tcpClientConnectedStatLabel->setFrameStyle(QFrame::Panel | QFrame::Raised);
 }
 
 void CRover5Control::btMsgReceived(EMessage m, QByteArray data)
@@ -421,7 +428,7 @@ void CRover5Control::btMsgReceived(EMessage m, QByteArray data)
     }
     else if (m == MSG_PING)
     {
-        btInterface->send(CBTMessage(MSG_PONG));
+        tcpClientInterface->send(CTcpClientMessage(MSG_PONG));
         if (!lastPingTime.isNull())
             pingStatW->set(0, lastPingTime.elapsed());
         lastPingTime.restart();
@@ -432,8 +439,8 @@ void CRover5Control::applyDriveUpdate(CDriveWidget::DriveFlags dir, int drivespe
 {
     if (dir == CDriveWidget::DRIVE_NONE)
     {
-        CBTMessage msg(MSG_CMD_STOP);
-        btInterface->send(msg);
+        CTcpClientMessage msg(MSG_CMD_STOP);
+        tcpClientInterface->send(msg);
     }
 #ifdef MECANUM_MOVEMENT
     else if (dir & CDriveWidget::DRIVE_TRANSLATE)
@@ -446,7 +453,7 @@ void CRover5Control::applyDriveUpdate(CDriveWidget::DriveFlags dir, int drivespe
         else
             trdir = (dir & CDriveWidget::DRIVE_LEFT) ? TRDIR_LEFT : TRDIR_RIGHT;
 
-        CBTMessage msg(MSG_CMD_TRANSLATE);
+        CTcpClientMessage msg(MSG_CMD_TRANSLATE);
         msg << (uint8_t)drivespeed << (uint8_t)trdir << (uint16_t)DRIVE_TIME;
         btInterface->send(msg);
     }
@@ -471,74 +478,62 @@ void CRover5Control::applyDriveUpdate(CDriveWidget::DriveFlags dir, int drivespe
         else // straight fwd/bwd
             lspeed = rspeed = drivespeed;
 
-        CBTMessage msg(MSG_CMD_MOTORSPEED);
+        CTcpClientMessage msg(MSG_CMD_MOTORSPEED);
         msg << lspeed << rspeed << (uint8_t)mdir << (uint8_t)mdir << (uint16_t)DRIVE_TIME;
-        btInterface->send(msg);
+        tcpClientInterface->send(msg);
     }
     else // turn
     {
         const ETurnDirection tdir =
                 (dir & CDriveWidget::DRIVE_LEFT) ? TDIR_LEFT : TDIR_RIGHT;
 
-        CBTMessage msg(MSG_CMD_TURN);
+        CTcpClientMessage msg(MSG_CMD_TURN);
         msg << (uint8_t)drivespeed << (uint8_t)tdir << (uint16_t)DRIVE_TIME;
-        btInterface->send(msg);
+        tcpClientInterface->send(msg);
     }
 }
 
 void CRover5Control::driveContinuous(int speed, int duration, EMotorDirection dir)
 {
-    CBTMessage msg(MSG_CMD_MOTORSPEED);
+    CTcpClientMessage msg(MSG_CMD_MOTORSPEED);
     msg << (uint8_t)speed << (uint8_t)speed << (uint8_t)dir << (uint8_t)dir <<
            (uint16_t)duration;
-    btInterface->send(msg);
+    tcpClientInterface->send(msg);
 }
 
 void CRover5Control::driveDistance(int speed, int dist, EMotorDirection dir)
 {
-    CBTMessage msg(MSG_CMD_DRIVEDIST);
+    CTcpClientMessage msg(MSG_CMD_DRIVEDIST);
     msg << (uint8_t)speed << (uint16_t)dist << (uint8_t)dir;
-    btInterface->send(msg);
+    tcpClientInterface->send(msg);
 }
 
 void CRover5Control::turnContinuous(int speed, int duration, ETurnDirection dir)
 {
-    CBTMessage msg(MSG_CMD_TURN);
+    CTcpClientMessage msg(MSG_CMD_TURN);
     msg << (uint8_t)speed << (uint8_t)dir << (uint16_t)duration;
-    btInterface->send(msg);
+    tcpClientInterface->send(msg);
 }
 
 void CRover5Control::turnAngle(int speed, int angle, ETurnDirection dir)
 {
-    CBTMessage msg(MSG_CMD_TURNANGLE);
+    CTcpClientMessage msg(MSG_CMD_TURNANGLE);
     msg << (uint8_t)speed << (uint16_t)angle << (uint8_t)dir;
-    btInterface->send(msg);
+    tcpClientInterface->send(msg);
 }
 
 void CRover5Control::stopDrive()
 {
-    btInterface->send(CBTMessage(MSG_CMD_STOP));
+    tcpClientInterface->send(CTcpClientMessage(MSG_CMD_STOP));
 }
 
 void CRover5Control::applyCamZoom()
 {
-    if (canSendTcp())
+    if (canSendCamTcp())
     {
         CTcpMsgComposer tcpmsg(MSG_SETZOOM);
         tcpmsg << static_cast<qreal>(camZoomSlider->value() / 10.0);
-        tcpClientSocket->write(tcpmsg);
+        camClientSocket->write(tcpmsg);
         qDebug() << "send zoom: " << static_cast<qreal>(camZoomSlider->value() / 10.0);
     }
-}
-
-void CRover5Control::closeEvent(QCloseEvent *event)
-{
-    btInterface->disconnectBT();
-    QTime waittime;
-    waittime.start();
-
-    while ((waittime.elapsed() < 3000) && btInterface->isConnected())
-        qApp->processEvents();
-
-    QMainWindow::closeEvent(event);
 }
