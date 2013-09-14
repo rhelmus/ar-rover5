@@ -10,6 +10,7 @@
 #include <QSpinBox>
 #include <QStyle>
 #include <QTimer>
+#include <QToolButton>
 
 
 CDriveWidget::CDriveWidget(QWidget *parent) : QWidget(parent)
@@ -22,6 +23,27 @@ CDriveWidget::CDriveWidget(QWidget *parent) : QWidget(parent)
     hbox->addWidget(createKeypad());
     hbox->addWidget(createContinuousDriveWidget());
     hbox->addWidget(createSpeedWidget());
+
+    QToolButton *tb = new QToolButton;
+//    tb->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+//    tb->setMinimumSize(100, 100);
+    tb->setIconSize(QSize(100, 100));
+
+    tb->setIcon(QIcon(":/resources/car.png"));
+    hbox->addWidget(tb);
+
+    hbox->addWidget(tb = new QToolButton);
+    tb->setArrowType(Qt::LeftArrow);
+    tb->setIconSize(QSize(50, 50));
+
+    hbox->addWidget(tb = new QToolButton);
+    tb->setArrowType(Qt::RightArrow);
+
+    hbox->addWidget(tb = new QToolButton);
+    tb->setArrowType(Qt::DownArrow);
+
+    hbox->addWidget(tb = new QToolButton);
+    tb->setArrowType(Qt::UpArrow);
 }
 
 QWidget *CDriveWidget::createKeypad()
@@ -172,20 +194,16 @@ CDriveKeypad::CDriveKeypad(QWidget *parent) : QWidget(parent)
     QGridLayout *grid = new QGridLayout(this);
 
 
-    driveButtons[BUTTON_FWD] =
-            createDriveButton(style()->standardIcon(QStyle::SP_ArrowUp));
+    driveButtons[BUTTON_FWD] = createDriveButton(QIcon(":resources/arrowup.png"));
     grid->addWidget(driveButtons[BUTTON_FWD], 0, 1);
 
-    driveButtons[BUTTON_BWD] =
-            createDriveButton(style()->standardIcon(QStyle::SP_ArrowDown));
+    driveButtons[BUTTON_BWD] = createDriveButton(QIcon(":resources/arrowdown.png"));
     grid->addWidget(driveButtons[BUTTON_BWD], 1, 1);
 
-    driveButtons[BUTTON_LEFT] =
-            createDriveButton(style()->standardIcon(QStyle::SP_ArrowLeft));
+    driveButtons[BUTTON_LEFT] = createDriveButton(QIcon(":resources/arrowleft.png"));
     grid->addWidget(driveButtons[BUTTON_LEFT], 1, 0);
 
-    driveButtons[BUTTON_RIGHT] =
-            createDriveButton(style()->standardIcon(QStyle::SP_ArrowRight));
+    driveButtons[BUTTON_RIGHT] = createDriveButton(QIcon(":resources/arrowright.png"));
     grid->addWidget(driveButtons[BUTTON_RIGHT], 1, 2);
 
 
@@ -203,6 +221,7 @@ QPushButton *CDriveKeypad::createDriveButton(const QIcon &icon)
     QPushButton *ret = new QPushButton;
     ret->setIcon(icon);
     ret->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    ret->setIconSize(QSize(25, 25));
     return ret;
 }
 

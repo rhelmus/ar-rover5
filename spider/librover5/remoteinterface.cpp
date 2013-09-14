@@ -12,7 +12,7 @@
 
 CRemoteInterface remoteInterface;
 
-#define REM_SERIAL Serial
+#define REM_SERIAL Serial2
 
 namespace {
 

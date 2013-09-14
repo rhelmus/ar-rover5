@@ -10,6 +10,11 @@
 #include <QTcpServer>
 #include <QTcpSocket>
 
+#if QT_VERSION >= 0x050000
+#include <QtWidgets>
+#endif
+
+
 CRover5Control::CRover5Control(QWidget *parent)
     : QMainWindow(parent), camClientSocket(0), camTcpReadBlockSize(0)
 {
@@ -313,12 +318,12 @@ void CRover5Control::toggleTcpClientConnection()
         tcpClientInterface->disconnectFromServer();
     else
     {
-        bool ok;
+        /*bool ok;
         const QString s = QInputDialog::getText(this, "Server address",
                                                 "Server address", QLineEdit::Normal,
                                                 "localhost", &ok);
-        if (ok && !s.isEmpty())
-            tcpClientInterface->connectToServer(s);
+        if (ok && !s.isEmpty())*/
+        tcpClientInterface->connectToServer(/*s*/"192.168.0.113");
     }
 }
 
