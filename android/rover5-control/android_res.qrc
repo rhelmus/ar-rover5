@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>resources/car-bwd.png</file>
+        <file>resources/car-fwd.png</file>
+    </qresource>
+</RCC>

@@ -148,7 +148,10 @@ QWidget *CRover5Control::createDriveWidgets()
     ret->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
     QWidget *w = new QWidget;
+    // HACK
+#ifndef Q_OS_ANDROID
     w->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
+#endif
     ret->layout()->addWidget(w);
     QGridLayout *grid = new QGridLayout(w);
 

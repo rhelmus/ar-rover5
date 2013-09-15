@@ -2,10 +2,7 @@
     <qresource prefix="/">
         <file>resources/connect.png</file>
         <file>resources/light.png</file>
-        <file>resources/car.png</file>
-        <file>resources/arrowdown.png</file>
         <file>resources/arrowleft.png</file>
         <file>resources/arrowright.png</file>
-        <file>resources/arrowup.png</file>
     </qresource>
 </RCC>

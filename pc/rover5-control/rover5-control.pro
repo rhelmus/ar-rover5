@@ -14,28 +14,29 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        rover5control.cpp \
     ../../shared/tcputils.cpp \
     btinterface.cpp \
-    numstatwidget.cpp \
-    utils.cpp \
     drivewidget.cpp \
-    scaledpixmapwidget.cpp \
-    mapscene.cpp \
-    tcpclientinterface.cpp
+    ../../control-base/utils.cpp \
+    ../../control-base/tcpclientinterface.cpp \
+    ../../control-base/scaledpixmapwidget.cpp \
+    ../../control-base/rover5control.cpp \
+    ../../control-base/numstatwidget.cpp \
+    ../../control-base/mapscene.cpp
 
-HEADERS  += rover5control.h \
-    ../../shared/tcputils.h \
+HEADERS  +=  ../../shared/tcputils.h \
     ../../shared/shared.h \
     btinterface.h \
-    numstatwidget.h \
-    utils.h \
     drivewidget.h \
-    scaledpixmapwidget.h \
-    mapscene.h \
-    tcpclientinterface.h
+    ../../control-base/utils.h \
+    ../../control-base/tcpclientinterface.h \
+    ../../control-base/scaledpixmapwidget.h \
+    ../../control-base/rover5control.h \
+    ../../control-base/numstatwidget.h \
+    ../../control-base/mapscene.h
 
 OTHER_FILES +=
 
 RESOURCES += \
-    resources.qrc
+    ../../control-base/resources.qrc \
+    pc_res.qrc

@@ -10,64 +10,32 @@
 #include <QSpinBox>
 #include <QStyle>
 #include <QTimer>
+#include <QToolButton>
 
 
 CDriveWidget::CDriveWidget(QWidget *parent) : QWidget(parent)
 {
-    setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    setFocusPolicy(Qt::StrongFocus);
-
     QHBoxLayout *hbox = new QHBoxLayout(this);
 
     hbox->addWidget(createKeypad());
-    hbox->addWidget(createContinuousDriveWidget());
     hbox->addWidget(createSpeedWidget());
+    hbox->addWidget(createDriveWidget());
 }
 
 QWidget *CDriveWidget::createKeypad()
 {
     QFrame *ret = new QFrame;
     ret->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
-    QVBoxLayout *vbox = new QVBoxLayout(ret);
+    QHBoxLayout *hbox = new QHBoxLayout(ret);
 
-    CDriveKeypad *keypad = new CDriveKeypad;
-    vbox->addWidget(keypad);
-    connect(keypad, SIGNAL(driveUpdate(CDriveWidget::DriveFlags)),
-            SLOT(sendDriveUpdate(CDriveWidget::DriveFlags)));
+    QPushButton *but = new QPushButton;
+    but->setIconSize(QSize(50, 50));
+    but->setIcon(QIcon(":/resources/arrowleft.png"));
+    hbox->addWidget(but);
 
-    return ret;
-}
-
-QWidget *CDriveWidget::createContinuousDriveWidget()
-{
-    QFrame *ret = new QFrame;
-    ret->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
-    QGridLayout *grid = new QGridLayout(ret);
-
-    grid->addWidget(contDriveModeCombo = new QComboBox, 0, 0);
-    contDriveModeCombo->addItems(QStringList() << "Drive FWD" << "Drive BWD" <<
-                                                  "Turn left" << "Turn right");
-    connect(contDriveModeCombo, SIGNAL(currentIndexChanged(int)),
-            SLOT(updateContDriveMode(int)));
-
-    grid->addWidget(contDriveSpinBox = new QSpinBox, 0, 1);
-
-    grid->addWidget(contDriveDurationCombo = new QComboBox, 0, 2);
-    contDriveDurationCombo->addItems(QStringList() << "Continuously" <<
-                                     "centimeter" << "seconds");
-    connect(contDriveDurationCombo, SIGNAL(currentIndexChanged(int)),
-            SLOT(updateContDriveDuration(int)));
-
-    QPushButton *button = new QPushButton("Go!");
-    connect(button, SIGNAL(clicked()), SLOT(sendContDrive()));
-    grid->addWidget(button, 0, 3);
-
-    grid->addWidget(button = new QPushButton("Stop"), 1, 3);
-    connect(button, SIGNAL(clicked()), SIGNAL(stopDriveReq()));
-
-    // Apply initial settings
-    updateContDriveMode(contDriveModeCombo->currentIndex());
-    updateContDriveDuration(contDriveDurationCombo->currentIndex());
+    hbox->addWidget(but = new QPushButton);
+    but->setIconSize(QSize(50, 50));
+    but->setIcon(QIcon(":/resources/arrowright.png"));
 
     return ret;
 }
@@ -96,69 +64,27 @@ QWidget *CDriveWidget::createSpeedWidget()
     return ret;
 }
 
+QWidget *CDriveWidget::createDriveWidget()
+{
+    QFrame *ret = new QFrame;
+    ret->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
+    QVBoxLayout *vbox = new QVBoxLayout(ret);
+
+    QPushButton *but = new QPushButton;
+    but->setIconSize(QSize(65, 65));
+    but->setIcon(QIcon(":resources/car-fwd.png"));
+    vbox->addWidget(but);
+
+    vbox->addWidget(but = new QPushButton);
+    but->setIconSize(QSize(65, 65));
+    but->setIcon(QIcon(":resources/car-bwd.png"));
+
+    return ret;
+}
+
 void CDriveWidget::sendDriveUpdate(CDriveWidget::DriveFlags df)
 {
     emit driveUpdate(df, motorPowerSpinBox->value());
-}
-
-void CDriveWidget::updateContDriveMode(int index)
-{
-    if (index < 2)
-    {
-        contDriveDurationCombo->setItemText(1, "centimeters");
-        contDriveSpinBox->setMaximum(10000);
-        contDriveSpinBox->setWrapping(false);
-    }
-    else
-    {
-        contDriveDurationCombo->setItemText(1, "degrees");
-        contDriveSpinBox->setMaximum(359);
-        contDriveSpinBox->setWrapping(true);
-    }
-}
-
-void CDriveWidget::updateContDriveDuration(int index)
-{
-    contDriveSpinBox->setEnabled(index != 0);
-}
-
-void CDriveWidget::sendContDrive()
-{
-    if (contDriveModeCombo->currentIndex() < 2) // Drive FWD/BWD
-    {
-        const EMotorDirection dir =
-                (contDriveModeCombo->currentIndex() == 0) ? MDIR_FWD : MDIR_BWD;
-
-        if (contDriveDurationCombo->currentIndex() == 0) // continuous
-            emit driveContReq(motorPowerSpinBox->value(), 0, dir);
-        else if (contDriveDurationCombo->currentIndex() == 1) // distance
-            emit driveDistReq(motorPowerSpinBox->value(), contDriveSpinBox->value(), dir);
-        else // drive for a specified time
-            emit driveContReq(motorPowerSpinBox->value(), contDriveSpinBox->value(), dir);
-
-    }
-    else // Rotate left/right
-    {
-        const ETurnDirection dir =
-                (contDriveModeCombo->currentIndex() == 2) ? TDIR_LEFT : TDIR_RIGHT;
-
-        if (contDriveDurationCombo->currentIndex() == 0) // continuous
-            emit turnContReq(motorPowerSpinBox->value(), 0, dir);
-        else if (contDriveDurationCombo->currentIndex() == 1) // turn angle
-            emit turnAngleReq(motorPowerSpinBox->value(), contDriveSpinBox->value(), dir);
-        else // turn for a specified time
-            emit turnContReq(motorPowerSpinBox->value(), contDriveSpinBox->value(), dir);
-    }
-}
-
-void CDriveWidget::keyPressEvent(QKeyEvent *event)
-{
-    if (event->key() == Qt::Key_Plus)
-        motorPowerSpinBox->stepBy(5);
-    else if (event->key() == Qt::Key_Minus)
-        motorPowerSpinBox->stepBy(-5);
-    else
-        QWidget::keyPressEvent(event);
 }
 
 
@@ -199,6 +125,7 @@ QPushButton *CDriveKeypad::createDriveButton(const QIcon &icon)
     QPushButton *ret = new QPushButton;
     ret->setIcon(icon);
     ret->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    ret->setIconSize(QSize(35, 35));
     return ret;
 }
 
