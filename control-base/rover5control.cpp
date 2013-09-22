@@ -321,12 +321,18 @@ void CRover5Control::toggleTcpClientConnection()
         tcpClientInterface->disconnectFromServer();
     else
     {
-        /*bool ok;
-        const QString s = QInputDialog::getText(this, "Server address",
-                                                "Server address", QLineEdit::Normal,
-                                                "localhost", &ok);
-        if (ok && !s.isEmpty())*/
-        tcpClientInterface->connectToServer(/*s*/"192.168.0.113");
+        QInputDialog id(this);
+        id.setInputMode(QInputDialog::TextInput);
+        id.setWindowTitle("Server address");
+        id.setLabelText("Server address");
+        id.setTextValue("192.168.0.113");
+
+#if defined(Q_OS_ANDROID)
+        // Fix to make dialog visible
+        id.resize(QApplication::desktop()->availableGeometry().size());
+#endif
+        if (id.exec() == QDialog::Accepted)
+            tcpClientInterface->connectToServer(id.textValue());
     }
 }
 
